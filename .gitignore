@@ -5,3 +5,4 @@ dist/
 # Julia
 reference/*.jl.cov
 reference/*.jl.mem
+test/golden/report/

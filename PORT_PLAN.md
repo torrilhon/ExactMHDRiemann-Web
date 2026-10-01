@@ -20,6 +20,9 @@ Snapshot port of the Julia package to TypeScript. It runs entirely in the browse
 | 0. Setup | done: scaffold, CI, Pages, `reference/` pinned to `6da1c02` (`reference/BASELINE.md`) |
 | 1. Golden data | done: 11 golden files, 8021 reference solves (`test/golden/README.md`) |
 | 2. Numerical toolbox | done: checked math with exact fma, Julia formatting, linalg, Brent (bit-identical to Roots.jl), Vern9 engine with dense output and step replay, Moré trust region, branch-aware FD Jacobian (83 unit tests) |
+| 3. Kernels | done: L0–L2 golden tests green (shocks 1e-15, fans 9e-16, dense output 7.5e-13, residual 1.7e-14, BIG points identical, FD Jacobian vs ForwardDiff 2.7e-8) |
+| 4. Report example end to end | done: driver, checker, output, Worker and first page (report example and Brio–Wu presets, wave table, plots, CSV); quasi-Euler ported as well (planned for Phase 7) |
+| 5. Regular solver complete (partly) | examples 115/117, random 2000/2000, quasi-Euler 4004/4004, stress 996/1000 identical (4 direct instead of homotopy, same solution); all wave tables ≤ 4.1e-12; C reference 1.33e-8 |
 
 Findings so far (details in `reference/BASELINE.md`):
 
@@ -28,6 +31,9 @@ Findings so far (details in `reference/BASELINE.md`):
 - **Domain errors** in the residual appear only for |Ψ| ≳ 1e4; the `BIG` path is exercised by 130 golden points.
 - **Julia uses FMA.** `evalpoly` is Horner with `muladd`, a hardware fma on the reference machine; the port emulates fma exactly.
 - **The trust region is Moré's, not dogleg** (§4.2).
+- **Vanishing waves and coplanar ties.** A wave with ψ ≈ ±1e-17 is a shock or a fan by the sign of round-off, and equal Bt/√p on both sides makes the frame's mirror decision a round-off tie; the golden comparison treats these as the same solution (`test/compare.ts`).
+- **The checker's eigenvector integration** can step outside the domain of the eigenvector field with a large first step; the port retries such steps (one quasi-Euler case), the fan ODEs keep Julia's failure semantics.
+- **Performance:** a direct solve takes ~5 ms in Node (Julia ~2 ms); homotopy cases are 5–10× slower than in Julia (stress set: mean 56 ms, max 7.2 s).
 - **Reconstructed scans** match the README, except a > c_A small-Bt settings at 1e-4 with 28/30 instead of ≥ 29/30.
 
 ---
@@ -395,13 +401,13 @@ The TS solver iterates to the same `abstol = 1e-12` as Julia, not just to the `a
 | Middle states, wave speeds (primary criterion) | `relerr` as in Julia (relative to max(\|a\|, \|b\|, 1)) ≤ 1e-9, or ≤ 1e4 × the larger of the two reported residuals, whichever is larger |
 | Ψ (secondary, diagnostic) | `relerr` ≤ 1e-7; the twist angle Ψ[3] compared modulo 2π; cases with a slow shock near saturation (ψs/Δmax > 3, where Ψ is badly determined) are excluded. A Ψ mismatch with matching states is logged, not a failure. |
 | `check.maxerr` | ≤ max(1e-8, 10 × Julia's value). Not a pass/fail criterion on its own: fans are accepted up to `100·check_tol`, and Julia's own worst `Success` on the stress set has 1.95e-8 (`reference/BASELINE.md`). |
-| C reference | ≤ 1.3e-8 (the Julia figure) |
+| C reference | ≤ 1.4e-8 (the README's 1.3e-8 is rounded; measured 1.334e-8, the same as Julia) |
 | Quasi-Euler | P* relative ≤ 1e-13 against Julia (Brent to 4 ULP); states ≤ 1e-12; fan interiors ≤ 1e-10; Sod within 1e-5 of Toro |
 | Switch continuity | ≤ 1e-8, as in the Julia test |
 | L0/L1 kernels | ≤ 1e-13 for closed-form kernels; ≤ 1e-10 for fan end states (ODE tolerance) |
 | L2 Jacobians | FD vs ForwardDiff ≤ 1e-6 × max(1, ‖J‖), as in `runtests.jl` |
 | Sampled profiles | ≤ 1e-10 away from discontinuities. Points within 1e-12 of a wave speed are excluded, since they may fall on different sides. |
-| CSV | character-identical to Julia's `write_csv` for the examples (§4.7) |
+| CSV | same layout as Julia's `write_csv`, header and x column character-identical, values ≤ 1e-10 (§4.7; the states agree to ~1e-13, not bit for bit) |
 | Speed | single direct solve ≤ 50 ms median in Node, including sampling 2,001 points (Julia: a few ms). Homotopy times are measured and reported, and determine the shipped `time_limit` (§4.2). |
 
 ### 5.4 Independent tests (no golden data needed)

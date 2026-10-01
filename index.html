@@ -4,17 +4,61 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Exact MHD Riemann Solver</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <meta name="description" content="Exact solutions of Riemann problems of ideal magnetohydrodynamics, computed in the browser." />
   </head>
   <body>
     <main>
-      <h1>Exact MHD Riemann Solver</h1>
-      <p>
-        Exact solutions of Riemann problems of one-dimensional ideal magnetohydrodynamics
-        (γ-law gas), following M. Torrilhon, <em>Exact Solver and Uniqueness Conditions for
-        Riemann Problems of Ideal Magnetohydrodynamics</em>, SAM Research Report 2002-06, ETH Zürich.
-      </p>
-      <p>The solver is being ported to the browser. This page is a placeholder.</p>
+      <header>
+        <h1>Exact MHD Riemann Solver</h1>
+        <p class="lede">
+          Exact solutions of Riemann problems of one-dimensional ideal magnetohydrodynamics
+          (γ-law gas), following M. Torrilhon, <em>Exact Solver and Uniqueness Conditions for
+          Riemann Problems of Ideal Magnetohydrodynamics</em>, SAM Research Report 2002-06, ETH Zürich.
+        </p>
+      </header>
+
+      <form id="problem" class="card" novalidate>
+        <div class="row">
+          <label class="preset">Example
+            <select id="preset"></select>
+          </label>
+          <p id="preset-note" class="muted"></p>
+        </div>
+        <div id="states" class="states"></div>
+        <div class="row params">
+          <label><span>γ</span><input id="gamma" inputmode="decimal" autocomplete="off" /></label>
+          <label><span>t</span><input id="t" inputmode="decimal" autocomplete="off" /></label>
+          <label><span>x min</span><input id="xmin" inputmode="decimal" autocomplete="off" /></label>
+          <label><span>x max</span><input id="xmax" inputmode="decimal" autocomplete="off" /></label>
+          <label><span>points</span><input id="n" inputmode="numeric" autocomplete="off" /></label>
+          <button id="compute" type="submit">Compute</button>
+        </div>
+      </form>
+
+      <section class="card result" aria-live="polite">
+        <div id="status" class="status">Loading…</div>
+        <dl id="facts" class="facts"></dl>
+        <ul id="messages" class="messages"></ul>
+        <div id="waves" class="table-wrap" hidden>
+          <table>
+            <caption>Waves, left to right: speeds and the state to the right of each wave</caption>
+            <thead>
+              <tr><th>wave</th><th>s left</th><th>s right</th><th>ρ</th><th>vx</th><th>vy</th><th>vz</th><th>Bx</th><th>By</th><th>Bz</th><th>p</th></tr>
+            </thead>
+            <tbody id="waves-body"></tbody>
+          </table>
+        </div>
+        <p id="downloads" class="downloads" hidden>
+          <button id="dl-csv" type="button" class="secondary">Download solution.csv</button>
+        </p>
+      </section>
+
+      <section id="plots-section" class="card" hidden>
+        <p id="plots-caption" class="muted"></p>
+        <div id="plots" class="plots"></div>
+      </section>
+
       <footer class="muted"><span id="snapshot">TypeScript port of ExactMHDRiemannSolver.jl</span></footer>
     </main>
     <script type="module" src="./src/main.ts"></script>

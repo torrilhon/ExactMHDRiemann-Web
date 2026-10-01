@@ -21,8 +21,13 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
+    "playwright": "^1.63.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "ml-matrix": "^6.15.0",
+    "uplot": "^1.6.32"
   }
 }

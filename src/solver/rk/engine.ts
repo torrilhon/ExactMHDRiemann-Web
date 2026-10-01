@@ -53,6 +53,13 @@ export interface OdeOptions {
   dense?: boolean;
   /** replay these step sizes instead of adaptive stepping */
   steps?: readonly number[];
+  /**
+   * Reject a step whose error estimate is NaN and retry with dt·qmin, instead of
+   * stopping with DtNaN as OrdinaryDiffEq does. Only for the checker's independent
+   * eigenvector integration, where a too large first step can leave the domain of the
+   * eigenvector field; the fan ODEs keep Julia's semantics (DtNaN → DomainError → BIG).
+   */
+  retryNaN?: boolean;
 }
 
 interface StepData {
@@ -258,7 +265,12 @@ export function integrate(tab: Tableau, f: Rhs, y0: readonly number[], t0: numbe
     if (Math.abs(dt) + tol >= dist) { dt = tdir * dist; last = true; }
     const r = rkStep(tab, counted, t, y, dt, abstol, reltol);
     const err = r.err;
-    if (Number.isNaN(err)) return done("DtNaN");
+    if (Number.isNaN(err)) {
+      if (!opts.retryNaN) return done("DtNaN");
+      dt *= qmin;
+      if (Math.abs(dt) <= epsOf(t)) return done("DtLessThanMin");
+      continue;
+    }
     let q: number, q11: number;
     if (err === 0) {
       q = 1 / (accepted === 0 ? qmaxFirst : qmax);
