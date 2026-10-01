@@ -1,12 +1,19 @@
 // The page: problem form, Compute (in a Web Worker), result panel, plots, CSV download.
 
 import type { ProblemInput, SolveResult } from "../solver/api.ts";
+import { solutionJson } from "../solver/api.ts";
+import { problemLoad, problemToml } from "../solver/problemfile.ts";
 import { PORT_VERSION, SNAPSHOT_COMMIT, SNAPSHOT_REPO, SNAPSHOT_VERSION } from "../solver/snapshot.ts";
 import { renderPlots } from "./plots.ts";
 import { PRESETS } from "./presets.ts";
 
 const VARS = ["ρ", "vx", "vy", "vz", "Bx", "By", "Bz", "p"] as const;
-const HARD_TIMEOUT_MS = 30_000;
+const HARD_TIMEOUT_MS = 60_000;
+/**
+ * Shipped homotopy budget. Julia's default is 5 s; the port is 5–10× slower on hard
+ * homotopy cases (reference/BASELINE.md), so the page allows more (plan §4.2).
+ */
+const DEFAULT_TIME_LIMIT = 20;
 
 /** Plain-language explanation of a retcode/reason (plan §7). */
 const REASONS: Record<string, string> = {
@@ -37,6 +44,10 @@ export function startApp(): void {
   buildForm();
   el<HTMLSelectElement>("preset").addEventListener("change", () => loadPreset(el<HTMLSelectElement>("preset").value));
   el("problem").addEventListener("submit", (e) => { e.preventDefault(); compute(); });
+  el<HTMLInputElement>("file").addEventListener("change", loadFile);
+  el<HTMLInputElement>("bn_euler").value = "1e-10";
+  el<HTMLInputElement>("time_limit").value = String(DEFAULT_TIME_LIMIT);
+  el<HTMLInputElement>("homotopy").checked = true;
   loadPreset(PRESETS[0]!.id);
   const link = document.createElement("a");
   link.href = `${SNAPSHOT_REPO}/tree/${SNAPSHOT_COMMIT}`;
@@ -75,7 +86,31 @@ function loadPreset(id: string): void {
   const p = PRESETS.find((q) => q.id === id) ?? PRESETS[0]!;
   el<HTMLSelectElement>("preset").value = p.id;
   el("preset-note").textContent = p.note;
-  const pr = p.problem;
+  fillForm(p.problem);
+}
+
+async function loadFile(): Promise<void> {
+  const inp = el<HTMLInputElement>("file");
+  const f = inp.files?.[0];
+  const msg = el("file-msg");
+  if (!f) return;
+  try {
+    const p = problemLoad(await f.text(), f.name);
+    fillForm(p);
+    el<HTMLSelectElement>("preset").value = "";
+    el("preset-note").textContent = "";
+    msg.className = "muted";
+    msg.textContent = `Loaded ${f.name}.`;
+    compute();
+  } catch (e) {
+    msg.className = "muted bad";
+    msg.textContent = e instanceof Error ? e.message : String(e);
+  } finally {
+    inp.value = "";
+  }
+}
+
+function fillForm(pr: ProblemInput): void {
   VARS.forEach((_, i) => {
     el<HTMLInputElement>(`L${i}`).value = String(pr.L[i]);
     el<HTMLInputElement>(`R${i}`).value = String(pr.R[i]);
@@ -103,13 +138,21 @@ function readProblem(): ProblemInput | null {
   const t = readNumber("t", (v) => v > 0 && Number.isFinite(v));
   const xmin = readNumber("xmin"), xmax = readNumber("xmax");
   const n = readNumber("n", (v) => Number.isInteger(v) && v >= 2 && v <= 100_000);
-  const all = [...L, ...R, gamma, t, xmin, xmax, n];
-  if (all.some((v) => v === null)) return null;
+  const bnEuler = readNumber("bn_euler", (v) => v >= 0 && Number.isFinite(v));
+  const timeLimit = readNumber("time_limit", (v) => v > 0);
+  const gs = el<HTMLInputElement>("guess").value.trim();
+  const guess = gs === "" ? undefined : gs.split(/[\s,;]+/).map(Number);
+  const guessOk = guess === undefined || (guess.length === 5 && guess.every(Number.isFinite));
+  el<HTMLInputElement>("guess").toggleAttribute("aria-invalid", !guessOk);
+  const all = [...L, ...R, gamma, t, xmin, xmax, n, bnEuler, timeLimit];
+  if (all.some((v) => v === null) || !guessOk) return null;
   if (xmin! >= xmax!) {
     el<HTMLInputElement>("xmax").setAttribute("aria-invalid", "");
     return null;
   }
-  return { L: L as number[], R: R as number[], gamma: gamma!, t: t!, x: [xmin!, xmax!], n: n! };
+  const opts = { bn_euler: bnEuler!, time_limit: timeLimit!, homotopy: el<HTMLInputElement>("homotopy").checked };
+  return { L: L as number[], R: R as number[], gamma: gamma!, t: t!, x: [xmin!, xmax!], n: n!, opts,
+    ...(guess ? { guess } : {}) };
 }
 
 // ---------------------------------------------------------------- worker
@@ -173,6 +216,8 @@ async function compute(): Promise<void> {
 // ---------------------------------------------------------------- result
 
 let lastCsv = "";
+let lastJson = "";
+let lastToml = "";
 
 function showResult(problem: ProblemInput, r: SolveResult): void {
   const status = el("status");
@@ -219,7 +264,10 @@ function showResult(problem: ProblemInput, r: SolveResult): void {
   el("waves").hidden = r.table.length === 0;
 
   lastCsv = r.csv;
-  el("downloads").hidden = r.csv === "";
+  lastJson = solutionJson(problem, r);
+  lastToml = problemToml(problem);
+  el("downloads").hidden = false;
+  el("dl-csv").hidden = r.csv === "";
   el("plots-section").hidden = r.x.length === 0;
   if (r.x.length > 0) {
     el("plots-caption").textContent = `Primitive variables at t = ${problem.t}, ${problem.n} points.`;
@@ -227,12 +275,18 @@ function showResult(problem: ProblemInput, r: SolveResult): void {
   }
 }
 
-export function downloadCsv(): void {
-  if (lastCsv === "") return;
-  const url = URL.createObjectURL(new Blob([lastCsv], { type: "text/csv" }));
+function save(text: string, name: string, type: string): void {
+  if (text === "") return;
+  const url = URL.createObjectURL(new Blob([text], { type }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = "solution.csv";
+  a.download = name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export function bindDownloads(): void {
+  el("dl-csv").addEventListener("click", () => save(lastCsv, "solution.csv", "text/csv"));
+  el("dl-json").addEventListener("click", () => save(lastJson, "solution.json", "application/json"));
+  el("dl-toml").addEventListener("click", () => save(lastToml, "problem.toml", "application/toml"));
 }

@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "ml-matrix": "^6.15.0",
+    "smol-toml": "^1.9.0",
     "uplot": "^1.6.32"
   }
 }

@@ -25,6 +25,12 @@
           </label>
           <p id="preset-note" class="muted"></p>
         </div>
+        <div class="row file-row">
+          <label class="file">Load a problem file (.toml)
+            <input id="file" type="file" accept=".toml,text/plain" />
+          </label>
+          <p id="file-msg" class="muted" role="status"></p>
+        </div>
         <div id="states" class="states"></div>
         <div class="row params">
           <label><span>γ</span><input id="gamma" inputmode="decimal" autocomplete="off" /></label>
@@ -34,6 +40,15 @@
           <label><span>points</span><input id="n" inputmode="numeric" autocomplete="off" /></label>
           <button id="compute" type="submit">Compute</button>
         </div>
+        <details class="advanced">
+          <summary>Advanced options</summary>
+          <div class="row params">
+            <label title="Bn/√p at or below which the quasi-Euler solver (Bn = 0) is used; 0 forces the regular solver"><span>bn_euler</span><input id="bn_euler" inputmode="decimal" autocomplete="off" /></label>
+            <label title="Wall-clock budget of the homotopy fallback, seconds"><span>time limit [s]</span><input id="time_limit" inputmode="decimal" autocomplete="off" /></label>
+            <label class="check"><input id="homotopy" type="checkbox" /> <span>homotopy fallback</span></label>
+            <label class="guess" title="Five path variables (ψf⁻, ψs⁻, αR, ψs⁺, ψf⁺) in the canonical frame, tried first"><span>start vector Ψ (optional)</span><input id="guess" autocomplete="off" placeholder="ψf⁻, ψs⁻, αR, ψs⁺, ψf⁺" /></label>
+          </div>
+        </details>
       </form>
 
       <section class="card result" aria-live="polite">
@@ -50,7 +65,9 @@
           </table>
         </div>
         <p id="downloads" class="downloads" hidden>
-          <button id="dl-csv" type="button" class="secondary">Download solution.csv</button>
+          <button id="dl-csv" type="button" class="secondary">solution.csv</button>
+          <button id="dl-json" type="button" class="secondary">solution.json</button>
+          <button id="dl-toml" type="button" class="secondary">problem.toml</button>
         </p>
       </section>
 

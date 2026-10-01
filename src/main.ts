@@ -1,5 +1,5 @@
 import "./ui/style.css";
-import { downloadCsv, startApp } from "./ui/app.ts";
+import { bindDownloads, startApp } from "./ui/app.ts";
 
+bindDownloads();
 startApp();
-document.getElementById("dl-csv")?.addEventListener("click", downloadCsv);

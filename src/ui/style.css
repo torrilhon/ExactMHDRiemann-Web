@@ -139,3 +139,13 @@ footer { margin-top: 24px; }
   .preset select { min-width: 0; width: 100%; }
   .preset { flex: 1 1 100%; }
 }
+.file-row { margin-top: 12px; }
+.file input { padding: 4px; border-style: dashed; }
+.advanced { margin-top: 16px; }
+.advanced summary { cursor: pointer; color: var(--muted); font-size: 0.875rem; }
+.advanced .row { margin-top: 12px; }
+label.check { flex-direction: row; align-items: center; gap: 6px; width: auto; padding-bottom: 8px; }
+label.guess { width: 18rem; max-width: 100%; }
+.downloads { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.downloads::before { content: "Download"; color: var(--muted); font-size: 0.875rem; margin-right: 4px; }
+#file-msg.bad { color: var(--bad); }

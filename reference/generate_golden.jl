@@ -22,7 +22,11 @@ function copy_data()
     for f in ("random_problems.csv", "c_reference.csv", "README.md")
         cp(joinpath(DATA, f), joinpath(OUT, "data", f); force = true)
     end
-    println("  copied test/data of the Julia package to data/")
+    mkpath(joinpath(OUT, "examples"))
+    for f in readdir(joinpath(pkgdir(E), "examples"))
+        cp(joinpath(pkgdir(E), "examples", f), joinpath(OUT, "examples", f); force = true)
+    end
+    println("  copied test/data and examples/ of the Julia package to data/, examples/")
 end
 
 const PARTS = [
