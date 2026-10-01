@@ -13,6 +13,22 @@ Snapshot port of the Julia package to TypeScript. It runs entirely in the browse
 
 ---
 
+## Status
+
+| Phase | State |
+| --- | --- |
+| 0. Setup | done: scaffold, CI, Pages, `reference/` pinned to `6da1c02` (`reference/BASELINE.md`) |
+| 1. Golden data | done: 11 golden files, 8021 reference solves (`test/golden/README.md`) |
+
+Findings so far (details in `reference/BASELINE.md`):
+
+- **Julia bug, fixed on a branch.** Two valid inputs just above the Bt thresholds return `CheckFailed`: the checker reports dense-output noise of a vanishingly weak fan as a mismatch. Fix `0ca567a` on branch `claude/elegant-edison-fb6a3w` of the Julia repo changes only these two results (verified on all 8021 solves). Pending: merge and re-pin the snapshot. The TS port includes the fixed checker; until the re-pin, the two cases are listed in `DIFFERENCES.md`.
+- **Time limit.** Five Julia homotopy solves need 6.8–8.3 s, above the default 5 s, so the golden data (time limit off) are not what Julia returns with default options for these cases. Confirms §4.2, item 4.
+- **Domain errors** in the residual appear only for |Ψ| ≳ 1e4; the `BIG` path is exercised by 130 golden points.
+- **Reconstructed scans** match the README, except a > c_A small-Bt settings at 1e-4 with 28/30 instead of ≥ 29/30.
+
+---
+
 ## 1. Scope of the first version
 
 In scope:
@@ -83,9 +99,9 @@ ExactMHDRiemann-Web/
     golden.*.test.ts            # comparison against Julia
   reference/                    # Julia project that produces the golden data
     Project.toml  Manifest.toml # Manifest committed: this is the numerics pin
-    generate_golden.jl
-    small_bt_scan.jl            # new: README's small-Bt validation (not in the Julia repo)
-    perpendicular_scan.jl       # new: README's 3,800 perpendicular problems (not in the Julia repo)
+    generate_golden.jl          # driver; parts in golden/*.jl
+    golden/scans.jl             # new: README's small-Bt and 3,800-problem scans (not in the Julia repo)
+    BASELINE.md                 # recorded results of the reference (Phase 0/1)
   index.html  vite.config.ts  tsconfig.json  package.json
   .github/workflows/ci.yml      # test + build + deploy to Pages
 ```
@@ -344,7 +360,7 @@ The port is accepted only when it reproduces the Julia results across thousands 
 | L3 solves | `solve_*.json` | for each problem: `retcode`, `reason`, `method`, Ψ, residual, wave table, `check.maxerr` | see 5.2 |
 | L4 output | `csv_*.json` | `sample` on the `write_csv` grid for the examples and 50 random problems | — |
 
-Two validation sets of the README have **no script in the Julia repo** and must be written first, as `reference/small_bt_scan.jl` and `reference/perpendicular_scan.jl` (sets 5 and 9 below). Run them in Julia and check that they reproduce the README figures before using them as golden data. If they don't, ask the Julia author for the original scripts rather than adjusting the README claims.
+Two validation sets of the README have **no script in the Julia repo** and must be written first; they are in `reference/golden/scans.jl` (sets 5 and 9 below). Run them in Julia and check that they reproduce the README figures before using them as golden data. If they don't, ask the Julia author for the original scripts rather than adjusting the README claims.
 
 ### 5.2 Problem sets for L3
 
@@ -417,7 +433,7 @@ The plan goes **straight to the regular MHD solver**, with the report example as
 | Phase | Content | Deliverable | Effort |
 | --- | --- | --- | --- |
 | 0. Setup | Tag the snapshot commit in the Julia repo; Vite/Vitest/TS strict in `ExactMHDRiemann-Web`; CI skeleton with Pages deploy of a placeholder page; `reference/` Julia project with committed `Manifest.toml` | green CI, placeholder page live | 0.5 d |
-| 1. Golden data | `generate_golden.jl` for L0–L4 and all problem sets; write `small_bt_scan.jl` and `perpendicular_scan.jl` and check them against the README figures; commit JSON (compressed if > a few MB) | `test/golden/` | 2 d |
+| 1. Golden data | `generate_golden.jl` for L0–L4 and all problem sets; write the small-Bt and perpendicular scans (`golden/scans.jl`) and check them against the README figures; commit gzipped JSON | `test/golden/` | 2 d |
 | 2. Numerical toolbox | `math.ts` (checked functions), `linalg.ts`, `brent.ts`, RK engine with dense output and frozen-step replay + Vern9 (or DOP853) tableau and interpolant (generated), trust region, FD Jacobian; `format.ts` (`juliaRepr`, `juliaRange`); each with its own unit tests (§4) | toolbox passes standalone tests | 4–5 d |
 | 3. Kernels | `types`, `eos`, `canonical`, `shocks` (`largest_root_in`, Rayleigh-line p̂), `fans`, `side` | L0, L1 and L2 golden tests green, including FD vs ForwardDiff Jacobians | 2–3 d |
 | 4. First end-to-end: report example | `solve.ts` (starts, homotopy, limits, `_solve`, `validate_input`), `check.ts` (incl. eigen choice), `output.ts` (`sample`, `wavetable`, CSV/JSON); minimal page with the form, the `paper.toml` preset, Worker, wave table, one plot and the CSV download | **first live version**: the report example reproduces Tables 1–2 in the browser and its CSV equals Julia's character for character | 3–4 d |
