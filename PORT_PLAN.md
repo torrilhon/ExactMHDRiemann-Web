@@ -22,7 +22,11 @@ Snapshot port of the Julia package to TypeScript. It runs entirely in the browse
 | 2. Numerical toolbox | done: checked math with exact fma, Julia formatting, linalg, Brent (bit-identical to Roots.jl), Vern9 engine with dense output and step replay, Moré trust region, branch-aware FD Jacobian (83 unit tests) |
 | 3. Kernels | done: L0–L2 golden tests green (shocks 1e-15, fans 9e-16, dense output 7.5e-13, residual 1.7e-14, BIG points identical, FD Jacobian vs ForwardDiff 2.7e-8) |
 | 4. Report example end to end | done: driver, checker, output, Worker and first page (report example and Brio–Wu presets, wave table, plots, CSV); quasi-Euler ported as well (planned for Phase 7) |
-| 5. Regular solver complete (partly) | examples 115/117, random 2000/2000, quasi-Euler 4004/4004, stress 996/1000 identical (4 direct instead of homotopy, same solution); all wave tables ≤ 4.1e-12; C reference 1.33e-8 |
+| 5. Regular solver complete | done: examples 115/117 identical (2 = the fixed Julia checker bug), random 2000/2000, stress 996/1000 (4 direct instead of homotopy, same solution); all wave tables ≤ 4.1e-12; C reference 1.33e-8 |
+| 6. Robustness | partly: fuzz harness (2000/2000 Success), browser smoke test in CI; small-Bt set and the shipped time limit pending (the page uses 20 s instead of Julia's 5 s) |
+| 7. Quasi-Euler | done: 4004/4004 identical, kernels and dense fans ≤ 1e-12, Sod within 1e-5 of Toro |
+| 8. Web UI | done: presets, problem-file upload, advanced options, Worker with hard timeout, wave table, plots, three downloads, light/dark, phone width |
+| 9. Release | partly: README with measured accuracy, CITATION.cff; pending: merge to main (Pages deploy), tag v0.1.0 |
 
 Findings so far (details in `reference/BASELINE.md`):
 
