@@ -43,21 +43,45 @@ const sci = (v: number) => (Number.isFinite(v) ? v.toExponential(2) : String(v))
 export function startApp(): void {
   buildForm();
   el<HTMLSelectElement>("preset").addEventListener("change", () => loadPreset(el<HTMLSelectElement>("preset").value));
+  // editing the problem after choosing an example: it is no longer that example
+  el("problem").addEventListener("input", (e) => {
+    const t = e.target as HTMLElement;
+    if (!(t instanceof HTMLInputElement) || t.type === "file" || t.closest(".advanced")) return;
+    clearSelection();
+  });
   el("problem").addEventListener("submit", (e) => { e.preventDefault(); compute(); });
   el<HTMLInputElement>("file").addEventListener("change", loadFile);
   el<HTMLInputElement>("bn_euler").value = "1e-10";
   el<HTMLInputElement>("time_limit").value = String(DEFAULT_TIME_LIMIT);
   el<HTMLInputElement>("homotopy").checked = true;
-  loadPreset(PRESETS[0]!.id);
   const link = document.createElement("a");
   link.href = `${SNAPSHOT_REPO}/tree/${SNAPSHOT_COMMIT}`;
   link.textContent = `ExactMHDRiemannSolver.jl ${SNAPSHOT_VERSION} (${SNAPSHOT_COMMIT.slice(0, 7)})`;
   el("snapshot").replaceChildren(`TypeScript port ${PORT_VERSION} of `, link, ". Computed in your browser.");
-  compute();
+  showIdle();
+}
+
+/** Start state: no result, a hint what to do. */
+function showIdle(): void {
+  const status = el("status");
+  status.className = "status idle";
+  status.textContent = "Choose an example, load a problem file or enter the two states, then press Compute.";
+  for (const id of ["facts", "messages"]) el(id).replaceChildren();
+  for (const id of ["waves", "downloads", "plots-section"]) el(id).hidden = true;
+}
+
+/** The fields no longer show a selected example (or loaded file). */
+function clearSelection(): void {
+  el<HTMLSelectElement>("preset").value = "";
+  el("preset-note").textContent = "";
+  const msg = el("file-msg");
+  msg.className = "muted";
+  msg.textContent = "";
 }
 
 function buildForm(): void {
   const sel = el<HTMLSelectElement>("preset");
+  sel.add(new Option("Select an example…", "", true, true));
   for (const p of PRESETS) sel.add(new Option(p.label, p.id));
   const grid = el("states");
   for (const side of ["L", "R"] as const) {
@@ -83,9 +107,11 @@ function buildForm(): void {
 }
 
 function loadPreset(id: string): void {
-  const p = PRESETS.find((q) => q.id === id) ?? PRESETS[0]!;
+  const p = PRESETS.find((q) => q.id === id);
+  if (p === undefined) { clearSelection(); return; }
   el<HTMLSelectElement>("preset").value = p.id;
   el("preset-note").textContent = p.note;
+  el("file-msg").textContent = "";
   fillForm(p.problem);
 }
 
@@ -97,11 +123,8 @@ async function loadFile(): Promise<void> {
   try {
     const p = problemLoad(await f.text(), f.name);
     fillForm(p);
-    el<HTMLSelectElement>("preset").value = "";
-    el("preset-note").textContent = "";
-    msg.className = "muted";
-    msg.textContent = `Loaded ${f.name}.`;
-    compute();
+    clearSelection();
+    msg.textContent = `Loaded ${f.name}. Press Compute to solve it.`;
   } catch (e) {
     msg.className = "muted bad";
     msg.textContent = e instanceof Error ? e.message : String(e);
@@ -111,6 +134,7 @@ async function loadFile(): Promise<void> {
 }
 
 function fillForm(pr: ProblemInput): void {
+  for (const inp of el("problem").querySelectorAll<HTMLInputElement>("input[aria-invalid]")) inp.removeAttribute("aria-invalid");
   VARS.forEach((_, i) => {
     el<HTMLInputElement>(`L${i}`).value = String(pr.L[i]);
     el<HTMLInputElement>(`R${i}`).value = String(pr.R[i]);

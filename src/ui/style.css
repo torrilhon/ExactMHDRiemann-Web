@@ -49,6 +49,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   margin: 0;
   background: var(--bg);
@@ -149,3 +150,5 @@ label.guess { width: 18rem; max-width: 100%; }
 .downloads { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .downloads::before { content: "Download"; color: var(--muted); font-size: 0.875rem; margin-right: 4px; }
 #file-msg.bad { color: var(--bad); }
+.status.idle { color: var(--muted); font-size: 0.9375rem; }
+.facts:empty { display: none; }

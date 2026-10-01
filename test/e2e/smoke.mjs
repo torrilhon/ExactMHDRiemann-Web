@@ -13,7 +13,19 @@ page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 await page.goto(url);
 const expect = (cond, msg) => { if (!cond) { console.error("FAIL:", msg); process.exitCode = 1; } };
 
-// 1. the report example (computed on load) reproduces Tables 1-2
+// 0. the page opens empty: no example selected, empty fields, no result
+expect((await page.inputValue("#preset")) === "", "drop-down starts at 'Select'");
+const empty = await page.$$eval("#states input, .row.params:not(.advanced *) input", (xs) => xs.every((x) => x.value === ""));
+expect(empty, "fields start empty");
+expect(await page.isHidden("#waves"), "no result at start");
+expect(await page.isHidden("#downloads"), "no downloads at start");
+expect(await page.isHidden("#plots-section"), "no plots at start");
+expect((await page.getAttribute("#status", "class")).includes("idle"), "status idle at start");
+
+// 1. the report example reproduces Tables 1-2
+await page.selectOption("#preset", "paper");
+expect((await page.inputValue("#L0")) === "3", "example fills the fields");
+await page.click("#compute");
 await page.waitForSelector(".status.good", { timeout: 60_000 });
 const cells = await page.$$eval("#waves-body tr", (rows) => rows.map((r) => [...r.children].map((c) => c.textContent)));
 const kinds = cells.slice(1).map((r) => r[0]);
@@ -30,6 +42,14 @@ for (const id of ["briowu", "sod"]) {
   await page.waitForTimeout(200);
   expect((await page.getAttribute("#status", "class")).includes("good"), `${id}: ${await page.textContent("#status")}`);
 }
+// 3. editing a field after choosing an example resets the drop-down to "Select"
+await page.selectOption("#preset", "briowu");
+await page.click(".advanced summary");
+await page.fill("#time_limit", "10");                       // advanced options keep the example
+expect((await page.inputValue("#preset")) === "briowu", "advanced option keeps the selection");
+await page.fill("#R7", "0.2");
+expect((await page.inputValue("#preset")) === "", "editing a field resets the selection");
+expect((await page.textContent("#preset-note")) === "", "and clears the example note");
 expect(errors.length === 0, `console errors: ${errors.join("; ")}`);
 console.log(process.exitCode ? "browser smoke test FAILED" : "browser smoke test passed");
 await browser.close();
