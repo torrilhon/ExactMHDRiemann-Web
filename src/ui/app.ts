@@ -3,7 +3,7 @@
 import type { ProblemInput, SolveResult } from "../solver/api.ts";
 import { solutionJson } from "../solver/api.ts";
 import { problemLoad, problemToml } from "../solver/problemfile.ts";
-import { PORT_VERSION, SNAPSHOT_COMMIT, SNAPSHOT_REPO, SNAPSHOT_VERSION } from "../solver/snapshot.ts";
+import { PORT_VERSION, SNAPSHOT_COMMIT, SNAPSHOT_REPO, SNAPSHOT_TAG, SNAPSHOT_VERSION } from "../solver/snapshot.ts";
 import { renderPlots } from "./plots.ts";
 import { PRESETS } from "./presets.ts";
 
@@ -55,7 +55,7 @@ export function startApp(): void {
   el<HTMLInputElement>("time_limit").value = String(DEFAULT_TIME_LIMIT);
   el<HTMLInputElement>("homotopy").checked = true;
   const link = document.createElement("a");
-  link.href = `${SNAPSHOT_REPO}/tree/${SNAPSHOT_COMMIT}`;
+  link.href = `${SNAPSHOT_REPO}/releases/tag/${SNAPSHOT_TAG}`;
   link.textContent = `ExactMHDRiemannSolver.jl ${SNAPSHOT_VERSION} (${SNAPSHOT_COMMIT.slice(0, 7)})`;
   el("snapshot").replaceChildren(`TypeScript port ${PORT_VERSION} of `, link, ". Computed in your browser.");
   showIdle();

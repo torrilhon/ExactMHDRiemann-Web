@@ -1,7 +1,7 @@
 # Golden data
 
 Generated **once** by the Julia reference project (`reference/generate_golden.jl`, plan
-§5.1) at ExactMHDRiemannSolver `0ca567a` with the package versions of
+§5.1) at ExactMHDRiemannSolver `0e8fdb7` (release v0.1.0) with the package versions of
 `reference/Manifest.toml`; every file records both in its `meta` entry, and
 `test/unit/golden-meta.test.ts` checks them. Do not edit by hand; regenerate with
 

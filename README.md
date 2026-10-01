@@ -1,11 +1,11 @@
-# Exact MHD Riemann Solver for the web
+# ExactMHDRiemannApp: exact MHD Riemann solver for the web
 
 Exact solutions of Riemann problems of one-dimensional ideal magnetohydrodynamics
-(γ-law gas), computed in the browser: **https://torrilhon.github.io/ExactMHDRiemann-Web/**
+(γ-law gas), computed in the browser: **https://torrilhon.github.io/ExactMHDRiemannApp/**
 
 This is a TypeScript port of the Julia package
 [ExactMHDRiemannSolver.jl](https://github.com/torrilhon/ExactMHDRiemannSolver), taken as
-a snapshot of commit `0ca567a` (version 0.1.0 with a fix of its checker), following
+a snapshot of its release [v0.1.0](https://github.com/torrilhon/ExactMHDRiemannSolver/releases/tag/v0.1.0) (commit `0e8fdb7`), which follows
 
 > M. Torrilhon, [*Exact Solver and Uniqueness Conditions for Riemann Problems of Ideal
 > Magnetohydrodynamics*](https://www.sam.math.ethz.ch/sam_reports/reports_final/reports2002/2002-06.pdf),

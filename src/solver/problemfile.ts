@@ -61,7 +61,7 @@ const vec = (v: readonly number[]) => "[" + v.map(juliaRepr).join(", ") + "]";
 /** The input as a problem file, readable by Julia's `problem_load` and `bin/riemann.jl`. */
 export function problemToml(p: ProblemInput): string {
   return [
-    `# Riemann problem exported by ExactMHDRiemann-Web ${PORT_VERSION} (snapshot ${SNAPSHOT_COMMIT.slice(0, 7)}).`,
+    `# Riemann problem exported by ExactMHDRiemannApp ${PORT_VERSION} (snapshot ${SNAPSHOT_COMMIT.slice(0, 7)}).`,
     "# Reproduce in Julia:  L, R, γ, t, x = problem_load(\"problem.toml\"); sol = solve(RiemannProblem(L, R; γ))",
     `gamma = ${juliaRepr(p.gamma)}`,
     `left  = ${vec(p.L)}`,

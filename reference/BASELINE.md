@@ -157,3 +157,14 @@ Manifest changed. Julia test suite: 3289/3289. All golden data were regenerated;
 two former CheckFailed cases are now Success in the reference, and the port matches
 the examples set 117/117. Sections above that name `6da1c02` describe the state before
 the re-pin.
+
+## Re-pin to the release v0.1.0 (`0e8fdb7`)
+
+The owner published the Julia release
+[v0.1.0](https://github.com/torrilhon/ExactMHDRiemannSolver/releases/tag/v0.1.0) at
+`0e8fdb7690c47be797c999d7ef551d6e34586e30`. It differs from `0ca567a` only in
+`README.md` and `CITATION.cff` (`src/` is identical), so the reference project was
+re-pinned to it: only `repo-rev` and `git-tree-sha1` of the ExactMHDRiemannSolver entry
+of the Manifest changed. All golden data were regenerated. Apart from the `commit` in
+each `meta` entry and the measured `time_ms` of the solve sets, every file is identical
+to the data at `0ca567a`.

@@ -4,7 +4,7 @@ Every case where the port's `retcode`, `reason` or `method` differs from the gol
 or where a quantity misses its tolerance of plan §5.3, is listed here with its
 explanation (plan §5.3).
 
-| set | case | golden (Julia `0ca567a`) | port | explanation |
+| set | case | golden (Julia `0e8fdb7`) | port | explanation |
 | --- | --- | --- | --- | --- |
 | `solve_small_bt` | #372, #402, #419, #432, #449 | Success (homotopy) | NoConvergence | a > c_A, larger side Bt/√p ≤ 3e-4: the continuation starts at the degenerate point R = L (singular twist direction); Julia's path winds the twist angle through ~30 turns. FD vs ForwardDiff Jacobians cannot be expected to agree there (reference/BASELINE.md). |
 | `solve_small_bt` | #362 | NoConvergence | Success (homotopy) | as above, the other way round |

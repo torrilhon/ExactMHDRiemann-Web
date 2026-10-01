@@ -59,7 +59,7 @@ function nonfinite(_k: string, v: unknown): unknown {
 /** solution.json: input, options, result and provenance. */
 export function solutionJson(p: ProblemInput, r: SolveResult): string {
   const doc = {
-    format: "ExactMHDRiemann-Web solution, v1",
+    format: "ExactMHDRiemannApp solution, v1",
     port_version: PORT_VERSION,
     snapshot: { repository: SNAPSHOT_REPO, commit: SNAPSHOT_COMMIT, version: SNAPSHOT_VERSION },
     input: { gamma: p.gamma, left: p.L, right: p.R, output: { t: p.t, x: p.x, n: p.n } },

@@ -4,9 +4,9 @@ Snapshot port of the Julia package to TypeScript. It runs entirely in the browse
 
 | | |
 | --- | --- |
-| Source | [torrilhon/ExactMHDRiemannSolver](https://github.com/torrilhon/ExactMHDRiemannSolver), commit `0ca567ab6446e7da404a4016df8d0f484ae30595`, version 0.1.0 plus the checker fix found in Phase 1 (originally `6da1c02`). Tag: `v0.1.0-web-snapshot`. |
+| Source | [torrilhon/ExactMHDRiemannSolver](https://github.com/torrilhon/ExactMHDRiemannSolver), release [v0.1.0](https://github.com/torrilhon/ExactMHDRiemannSolver/releases/tag/v0.1.0), commit `0e8fdb7690c47be797c999d7ef551d6e34586e30` (same `src/` as `0ca567a`, the 0.1.0 code plus the checker fix found in Phase 1; originally `6da1c02`). |
 | Numerics pin | The Julia repo has no `Manifest.toml` (it is git-ignored) and `[compat]` only fixes major versions (`NonlinearSolve = "4"`, `OrdinaryDiffEqVerner = "2"`, `Roots = "3"`, …). The tag alone therefore does **not** fix the numerics. The real pin is `reference/Manifest.toml`, committed in the web repo (§5.1). |
-| Target | Existing repository [torrilhon/ExactMHDRiemann-Web](https://github.com/torrilhon/ExactMHDRiemann-Web) (MIT license already in place), static site on GitHub Pages |
+| Target | Repository [torrilhon/ExactMHDRiemannApp](https://github.com/torrilhon/ExactMHDRiemannApp) (renamed from ExactMHDRiemann-Web; MIT license), static site on GitHub Pages at https://torrilhon.github.io/ExactMHDRiemannApp/ |
 | Policy | One-time snapshot; the two code bases may diverge later. The Julia code is the reference for correctness of this port only. |
 | Goal | Same robustness and accuracy as the Julia original: same return codes, same refusals, physical results to ~1e-9. |
 | First milestone | The example of the 2002 report (`examples/paper.toml`) solved end to end in the browser. It contains every wave kind of the regular solver (fast fan, rotation, slow fan, contact, slow shock, rotation, fast shock) and so exercises the whole regular pipeline at once. |
@@ -17,7 +17,7 @@ Snapshot port of the Julia package to TypeScript. It runs entirely in the browse
 
 | Phase | State |
 | --- | --- |
-| 0. Setup | done: scaffold, CI, Pages, `reference/` pinned (now to `0ca567a`, `reference/BASELINE.md`) |
+| 0. Setup | done: scaffold, CI, Pages, `reference/` pinned (now to the Julia release v0.1.0, `0e8fdb7`, `reference/BASELINE.md`) |
 | 1. Golden data | done: 11 golden files, 8021 reference solves (`test/golden/README.md`) |
 | 2. Numerical toolbox | done: checked math with exact fma, Julia formatting, linalg, Brent (bit-identical to Roots.jl), Vern9 engine with dense output and step replay, Moré trust region, branch-aware FD Jacobian (83 unit tests) |
 | 3. Kernels | done: L0–L2 golden tests green (shocks 1e-15, fans 9e-16, dense output 7.5e-13, residual 1.7e-14, BIG points identical, FD Jacobian vs ForwardDiff 2.7e-8) |
@@ -26,11 +26,11 @@ Snapshot port of the Julia package to TypeScript. It runs entirely in the browse
 | 6. Robustness | done except one criterion: small-Bt set 894/900 = 99.3 % identical (target ≥ 99.5 %; 6 degenerate continuation cases, success counts 835 vs 831); fuzz harness 2000/2000; browser smoke test in CI; speed: random 3.4 ms, stress 22 ms mean per solve (Julia 2 / 10 ms); page time limit 20 s |
 | 7. Quasi-Euler | done: 4004/4004 identical, kernels and dense fans ≤ 1e-12, Sod within 1e-5 of Toro |
 | 8. Web UI | done: presets, problem-file upload, advanced options, Worker with hard timeout, wave table, plots, three downloads, light/dark, phone width |
-| 9. Release | done except tags: README with measured accuracy, CITATION.cff, live on GitHub Pages; tags `v0.1.0-web-snapshot` (Julia) and `v0.1.0` (web) to be pushed by the owner |
+| 9. Release | done except the web tag: README with measured accuracy, CITATION.cff, live on GitHub Pages; Julia release v0.1.0 published by the owner and pinned; tag `v0.1.0` (web) to be pushed by the owner |
 
 Findings so far (details in `reference/BASELINE.md`):
 
-- **Julia bug, fixed.** Two valid inputs just above the Bt thresholds returned `CheckFailed`: the checker reported dense-output noise of a vanishingly weak fan as a mismatch. Fix `0ca567a` (now on the Julia `main`) changes only these two results (verified on all 8021 solves); the snapshot is re-pinned to it and the golden data regenerated.
+- **Julia bug, fixed.** Two valid inputs just above the Bt thresholds returned `CheckFailed`: the checker reported dense-output noise of a vanishingly weak fan as a mismatch. Fix `0ca567a` (now on the Julia `main` and part of the release v0.1.0) changes only these two results (verified on all 8021 solves); the snapshot is re-pinned to the release and the golden data regenerated.
 - **Time limit.** Five Julia homotopy solves need 6.8–8.3 s, above the default 5 s, so the golden data (time limit off) are not what Julia returns with default options for these cases. Confirms §4.2, item 4.
 - **Domain errors** in the residual appear only for |Ψ| ≳ 1e4; the `BIG` path is exercised by 130 golden points.
 - **Julia uses FMA.** `evalpoly` is Horner with `muladd`, a hardware fma on the reference machine; the port emulates fma exactly.
@@ -89,7 +89,7 @@ The Julia package has 1,287 lines of source in 12 files under `src/` (including 
 ### 3.1 Repository layout
 
 ```
-ExactMHDRiemann-Web/
+ExactMHDRiemannApp/
   src/
     solver/                     # pure numerics, no DOM; runs in Node and in a Worker
       types.ts                  # RetCode, SolverOptions, HState, Ctx, Wave, FanData, Frame, RiemannProblem, RiemannSolution
@@ -501,7 +501,7 @@ Total: about 18.5–25.5 working days, **4.5–5 weeks**. Phases 2 and 6 carry m
 
 Settled:
 
-1. Repository: [torrilhon/ExactMHDRiemann-Web](https://github.com/torrilhon/ExactMHDRiemann-Web).
+1. Repository: [torrilhon/ExactMHDRiemannApp](https://github.com/torrilhon/ExactMHDRiemannApp) (originally ExactMHDRiemann-Web).
 2. License: MIT, like the original (already in the repository; the borrowed coefficient and algorithm sources are MIT as well).
 3. Order: regular MHD solver first, with the report example as the first end-to-end target; quasi-Euler afterwards (§6).
 
