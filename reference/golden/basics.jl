@@ -50,5 +50,27 @@ function gen_format()
         (2.0, 2.0, 4), (-1.0, -1.0, 1)]
     ranges = [(a = a, b = b, n = n, x = collect(range(a, b; length = n)), repr = [repr(v) for v in range(a, b; length = n)])
               for (a, b, n) in grids]
-    save("format", (reprs = reprs, ranges = ranges))
+    # fma: Julia's evalpoly uses muladd, compiled to a hardware fma (plan §4.6)
+    fmas = Any[]
+    for _ in 1:3000
+        a, b = randn(rng) * 10.0^rand(rng, -5:5), randn(rng) * 10.0^rand(rng, -5:5)
+        k = rand(rng, 1:5)
+        c = k == 1 ? randn(rng) * 10.0^rand(rng, -8:8) :
+            k == 2 ? -(a * b) :                                   # cancellation: result = rounding error of a*b
+            k == 3 ? -(a * b) * (1 + eps() * randn(rng)) :
+            k == 4 ? nextfloat(-(a * b), rand(rng, -3:3)) :
+                     -(a * b) / 2^rand(rng, 50:56)                # result near a rounding boundary of a*b
+        push!(fmas, (a = a, b = b, c = c, fma = fma(a, b, c)))
+    end
+    for (a, b, c) in ((1e-200, 1e-200, 0.0), (1e-160, 1e-160, 1e-320), (1e200, 1e200, -Inf), (1e300, 10.0, -1e301),
+                      (2.0^-537, 2.0^-537, 2.0^-1074), (0.0, -1.0, -0.0), (-0.0, 1.0, -0.0), (1.0, 1.0, -1.0),
+                      (1 + eps(), 1 - eps(), -1.0), (3.0, 1 / 3, -1.0), (1e308, 2.0, -1e308), (5e-324, 0.5, 0.0))
+        push!(fmas, (a = a, b = b, c = c, fma = fma(a, b, c)))
+    end
+    polys = Any[]
+    for _ in 1:500
+        c = randn(rng, rand(rng, 2:6)); x = 4rand(rng) - 2
+        push!(polys, (c = c, x = x, value = evalpoly(x, Tuple(c))))
+    end
+    save("format", (reprs = reprs, ranges = ranges, fma = fmas, evalpoly = polys))
 end

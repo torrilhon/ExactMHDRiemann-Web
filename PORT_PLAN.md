@@ -281,7 +281,7 @@ These differences between Julia and JavaScript would silently change behaviour:
 | `log(x)`, x < 0 | throws `DomainError` | `NaN` | `logD` |
 | `x^y`, x < 0, y non-integer | throws `DomainError` | `NaN` | `powD` for `(ρ/ρ₀)^γ` in `perpendicular.jl` |
 | `x^2`, `x^3` (literal) | `x*x`, `x*x*x` (`literal_pow`) | `x ** 3` may call `pow` | write `x*x`, `x*x*x` to get the same rounding |
-| `evalpoly(x, (c0, c1, c2, c3))` | Horner, coefficients in ascending order | n/a | `horner(x, c)` with the same order |
+| `evalpoly(x, (c0, c1, c2, c3))` | Horner with `muladd`, coefficients ascending; **a hardware FMA** on x86-64/ARM64 | no fma | `evalpoly` with an exact fma emulation (`math.ts`), bit-identical to Julia |
 | `atan(y, x)` | two-argument atan | `Math.atan2(y, x)` | wrapper `atan2` |
 | `hypot` | robust | `Math.hypot` robust, slower, last-bit differences possible | fine; inline only if profiling says so |
 | `sort(v)` | numeric | **lexicographic by default** | always `sort((a, b) => a - b)`; matters in `largest_root_in` (`sort([lo; crit; hi])`) and for `sortperm` in `fan_eigen_rhs` |

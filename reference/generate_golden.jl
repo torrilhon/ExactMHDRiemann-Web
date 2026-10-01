@@ -4,7 +4,7 @@
 #   julia --project=reference reference/generate_golden.jl kernels    # selected parts
 #
 # Parts: basics format kernels fans_dense residual solve_examples solve_random
-#        solve_stress solve_small_bt solve_perp output data
+#        solve_stress solve_small_bt solve_perp output brent data
 
 using Random
 include("golden/common.jl")
@@ -14,6 +14,7 @@ include("golden/residual.jl")
 include("golden/solves.jl")
 include("golden/scans.jl")
 include("golden/output.jl")
+include("golden/brent.jl")
 
 function copy_data()
     mkpath(joinpath(OUT, "data"))
@@ -27,7 +28,7 @@ const PARTS = [
     "basics" => gen_basics, "format" => gen_format, "kernels" => gen_kernels, "fans_dense" => gen_fans_dense,
     "residual" => gen_residual, "solve_examples" => gen_solve_examples, "solve_random" => gen_solve_random,
     "solve_stress" => gen_solve_stress, "solve_small_bt" => gen_small_bt_scan, "solve_perp" => gen_solve_perp,
-    "output" => gen_output, "data" => copy_data]
+    "output" => gen_output, "brent" => gen_brent, "data" => copy_data]
 
 selected = isempty(ARGS) ? first.(PARTS) : ARGS
 for a in selected

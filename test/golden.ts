@@ -23,7 +23,7 @@ export const GOLDEN_DIR = new URL("./golden/", import.meta.url);
 
 export const GOLDEN_FILES = [
   "basics", "format", "kernels", "fans_dense", "residual", "solve_examples", "solve_random",
-  "solve_stress", "solve_small_bt", "solve_perp", "output",
+  "solve_stress", "solve_small_bt", "solve_perp", "output", "brent",
 ] as const;
 export type GoldenName = (typeof GOLDEN_FILES)[number];
 

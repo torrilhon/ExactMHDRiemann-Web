@@ -91,3 +91,12 @@ errors (DomainError, fan ODEs failing with NaN step sizes) appear for |Ψ| of or
   a = 2c_A on the small side; the README's construction is unknown.
 - Perpendicular: 3723 Success, 77 vacuum of 3800: **as in the README** ("all Success
   except cases that generate vacuum").
+
+### Hardware dependence of the reference: FMA
+
+Julia's `evalpoly` (used for the fast-shock cubic) is Horner with `muladd`, which Julia
+compiles to a fused multiply-add where the CPU has one (x86-64 with FMA3, ARM64), and to
+a separate multiply and add otherwise. The golden data were generated on a machine with
+FMA, so they are reproduced bit for bit only with fma semantics. The TS port emulates
+fma exactly (`src/solver/math.ts`, tested on 3012 triples against Julia). OrdinaryDiffEq's
+Verner steps also use `@muladd`; the ODE results are compared with tolerances anyway.
