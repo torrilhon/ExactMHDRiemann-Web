@@ -7,6 +7,7 @@ authors:
     email: mt@acom.rwth-aachen.de
     affiliation: "ACoM, RWTH Aachen University"
 license: MIT
+version: 0.1.0
 repository-code: "https://github.com/torrilhon/ExactMHDRiemann-Web"
 url: "https://torrilhon.github.io/ExactMHDRiemann-Web/"
 references:
