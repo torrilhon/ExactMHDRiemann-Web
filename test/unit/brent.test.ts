@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ConvergenceFailed, findZeroBrent, nextfloat, prevfloat } from "../../src/solver/brent.ts";
-import { ArgumentError, EPS, evalpoly } from "../../src/solver/math.ts";
+import { ArgumentError, EPS } from "../../src/solver/math.ts";
+import { evalpolyFma } from "../fma.ts";
 import { loadGolden } from "../golden.ts";
 
 interface BrentCase {
@@ -11,7 +12,7 @@ const G = loadGolden<{ cases: BrentCase[] }>("brent");
 
 function run(c: BrentCase): { root: number | string; evals: number } {
   let evals = 0;
-  const f = (x: number) => { evals++; return evalpoly(x, c.c); };
+  const f = (x: number) => { evals++; return evalpolyFma(x, c.c); };       // golden made with fused evalpoly
   try {
     return { root: findZeroBrent(f, c.a, c.b, c.opts), evals };
   } catch (e) {

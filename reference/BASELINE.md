@@ -100,3 +100,22 @@ a separate multiply and add otherwise. The golden data were generated on a machi
 FMA, so they are reproduced bit for bit only with fma semantics. The TS port emulates
 fma exactly (`src/solver/math.ts`, tested on 3012 triples against Julia). OrdinaryDiffEq's
 Verner steps also use `@muladd`; the ODE results are compared with tolerances anyway.
+
+### FMA inside the solver, libm, and coplanar problems (Phase 3)
+
+The fma question is subtler than above. `muladd` only *permits* fusion; LLVM decides
+per compilation context. Inside the solver's inlined, type-stable code it mostly does
+not fuse: plain multiply-add reproduces Julia's fast-shock cubic roots bit for bit in
+600 of 621 golden cases, fused fma in 476 (the golden generators that call `evalpoly`
+through dynamic dispatch get the fused version). The port therefore uses plain
+arithmetic, and the remaining cases differ in the last bits (Brent's tolerance is 4 ULP).
+The exact fma emulation is kept in the tests (`test/fma.ts`), where it reproduces the
+Brent and fma golden data bit for bit.
+
+`Math.sin`/`Math.cos` and Julia's differ in the last bit for some arguments. This
+matters for **exactly coplanar problems in a rotated frame**: the canonical Bz of the
+right state is mathematically 0, numerically ±1e-17, in Julia as in the port, so the
+twist angle α = ±π and with it the first start (±π/2) is decided by round-off. The two
+outcomes are mirror images (z → -z in the canonical frame) of the same regular solution
+family. Axis-aligned coplanar problems (Brio–Wu: Bz = 0 exactly) are not affected. Golden
+comparisons of coplanar problems accept the mirrored solution.

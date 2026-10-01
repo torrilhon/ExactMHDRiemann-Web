@@ -20,7 +20,7 @@ describe("checked functions (plan §4.6)", () => {
   });
 });
 
-import { fma } from "../../src/solver/math.ts";
+import { evalpolyFma, fma } from "../fma.ts";
 import { loadGolden } from "../golden.ts";
 
 describe("fma emulation vs Julia's hardware fma", () => {
@@ -32,14 +32,15 @@ describe("fma emulation vs Julia's hardware fma", () => {
     expect(bad).toEqual([]);
     expect(G.fma.length).toBeGreaterThan(3000);
   });
-  it("evalpoly is bit-identical to Julia's", () => {
-    const bad = G.evalpoly.filter((p) => !Object.is(evalpoly(p.x, p.c), p.value));
+  it("evalpolyFma is bit-identical to Julia's (fused) evalpoly", () => {
+    const bad = G.evalpoly.filter((p) => !Object.is(evalpolyFma(p.x, p.c), p.value));
     expect(bad.length).toBe(0);
   });
   it("differs from a separately rounded multiply-add where it must", () => {
     // the case found in the Brent comparison: plain Horner gives exactly 0
     const x = 0.7235214403368077, c0 = 0.3074344683174547, c1 = -0.4249141092133225;
     expect(c0 + x * c1).toBe(0);
-    expect(evalpoly(x, [c0, c1])).toBe(-3.9650239443466465e-18);
+    expect(evalpoly(x, [c0, c1])).toBe(0);
+    expect(evalpolyFma(x, [c0, c1])).toBe(-3.9650239443466465e-18);
   });
 });
