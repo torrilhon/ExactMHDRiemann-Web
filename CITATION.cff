@@ -16,7 +16,7 @@ references:
       - family-names: Torrilhon
         given-names: Manuel
     version: 0.1.0
-    commit: 6da1c024b8e5af6975dd66569e38b936424cb0e9
+    commit: 0ca567ab6446e7da404a4016df8d0f484ae30595
     repository-code: "https://github.com/torrilhon/ExactMHDRiemannSolver"
 preferred-citation:
   type: report

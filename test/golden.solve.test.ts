@@ -7,12 +7,8 @@ import { sampleXi, wavetable } from "../src/solver/output.ts";
 import { caseLabel, runCase, type GoldenCase } from "./compare.ts";
 import { goldenText, loadGolden, type GoldenName } from "./golden.ts";
 
-// known, explained differences (test/golden/DIFFERENCES.md): Julia's checker false
-// positive on vanishingly weak fans, fixed in the port (Julia commit 0ca567a)
-const EXPECTED: Record<string, { retcode: string; reason: string }> = {
-  "refusal/bt_larger_at_threshold": { retcode: "Success", reason: "none" },
-  "refusal/bt_ok_2": { retcode: "Success", reason: "none" },
-};
+// known, explained differences (test/golden/DIFFERENCES.md); none in these sets
+const EXPECTED: Record<string, { retcode: string; reason: string }> = {};
 
 function runSet(set: GoldenName) {
   const G = loadGolden<{ cases?: GoldenCase[]; scan?: GoldenCase[] }>(set);

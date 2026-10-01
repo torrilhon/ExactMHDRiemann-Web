@@ -5,7 +5,7 @@ Exact solutions of Riemann problems of one-dimensional ideal magnetohydrodynamic
 
 This is a TypeScript port of the Julia package
 [ExactMHDRiemannSolver.jl](https://github.com/torrilhon/ExactMHDRiemannSolver), taken as
-a snapshot of commit `6da1c02` (version 0.1.0), following
+a snapshot of commit `0ca567a` (version 0.1.0 with a fix of its checker), following
 
 > M. Torrilhon, *Exact Solver and Uniqueness Conditions for Riemann Problems of Ideal
 > Magnetohydrodynamics*, SAM Research Report 2002-06, ETH Zürich.
@@ -26,7 +26,7 @@ The port is tested against reference data generated once by the Julia package
 
 | test set | problems | agreement with Julia |
 | --- | --- | --- |
-| report example, Brio–Wu, C-code benchmarks, refusals, thresholds, symmetries, small fields | 117 | same retcode in all cases but two (Julia's checker false positive, fixed); wave tables ≤ 4e-13 |
+| report example, Brio–Wu, C-code benchmarks, refusals, thresholds, symmetries, small fields | 117 | all identical; wave tables ≤ 4e-13 |
 | random problems of the Julia test data | 2000 | all identical; ≤ 8e-15; C reference solutions ≤ 1.3e-8 (8 decimals) |
 | stress set (`benchmark/stress.jl`) | 1000 | all identical; ≤ 2.2e-12 |
 | small transverse field scan | 900 | 894 identical, 6 degenerate continuation cases differ (Julia 835 Success, port 831); ≤ 1.4e-12 |

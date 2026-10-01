@@ -1,8 +1,7 @@
 // Independent checks of an assembled solution, in the user frame, using the full
 // conservative flux and a separate eigenvector integration for fans. They share no
 // code with the wave kernels except the characteristic speeds. Mirrors check.jl,
-// including the noise floor of the pointwise fan defect (Julia commit 0ca567a on
-// branch claude/elegant-edison-fb6a3w; see reference/BASELINE.md).
+// including the noise floor of the pointwise fan defect (Julia commit 0ca567a).
 
 import { EigenvalueDecomposition, Matrix } from "ml-matrix";
 import { fromCanonical, speedToUser, toPrim } from "./canonical.ts";

@@ -358,8 +358,8 @@ version = "0.8.21"
 
 [[deps.ExactMHDRiemannSolver]]
 deps = ["ForwardDiff", "LinearAlgebra", "Logging", "NonlinearSolve", "OrdinaryDiffEqVerner", "Printf", "Roots", "SciMLBase", "StaticArrays", "TOML"]
-git-tree-sha1 = "f1acc29556f5a15ed41ed817e139cf30ff88986d"
-repo-rev = "6da1c024b8e5af6975dd66569e38b936424cb0e9"
+git-tree-sha1 = "13e1afc52175d110ea2b0ff9d4d8195a8dc8c959"
+repo-rev = "0ca567ab6446e7da404a4016df8d0f484ae30595"
 repo-url = "https://github.com/torrilhon/ExactMHDRiemannSolver.git"
 uuid = "0d315d94-8d33-4e3b-9f90-006d7b2d27bf"
 version = "0.1.0"

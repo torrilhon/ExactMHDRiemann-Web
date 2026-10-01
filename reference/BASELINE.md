@@ -148,3 +148,12 @@ In these the homotopy starts at the degenerate point R = L, where the twist dire
 singular; Julia's successful paths let the twist angle wind through ~30 turns. Finite
 differences and ForwardDiff cannot be expected to agree there. Success counts: Julia 835,
 port 831 of 900.
+
+## Re-pin to `0ca567a`
+
+The checker fix was merged into the Julia `main` (`0ca567ab6446e7da404a4016df8d0f484ae30595`)
+and the reference project re-pinned to it; only the ExactMHDRiemannSolver entry of the
+Manifest changed. Julia test suite: 3289/3289. All golden data were regenerated; the
+two former CheckFailed cases are now Success in the reference, and the port matches
+the examples set 117/117. Sections above that name `6da1c02` describe the state before
+the re-pin.

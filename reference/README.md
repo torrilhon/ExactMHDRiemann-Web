@@ -5,7 +5,7 @@ is tested against (plan §5.1). It is not needed to build or test the web app.
 
 `Project.toml` depends on
 [ExactMHDRiemannSolver](https://github.com/torrilhon/ExactMHDRiemannSolver) at the
-snapshot commit `6da1c024b8e5af6975dd66569e38b936424cb0e9`. The committed
+snapshot commit `0ca567ab6446e7da404a4016df8d0f484ae30595` (tag `v0.1.0-web-snapshot`; 0.1.0 plus the checker fix, see BASELINE.md). The committed
 `Manifest.toml` pins **all** numerical dependencies (NonlinearSolve,
 OrdinaryDiffEqVerner, Roots, ForwardDiff, …). The Julia repository has no Manifest of
 its own, so this file, not the commit alone, fixes the reference numerics. A unit test

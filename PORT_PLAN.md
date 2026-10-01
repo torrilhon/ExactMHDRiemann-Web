@@ -4,7 +4,7 @@ Snapshot port of the Julia package to TypeScript. It runs entirely in the browse
 
 | | |
 | --- | --- |
-| Source | [torrilhon/ExactMHDRiemannSolver](https://github.com/torrilhon/ExactMHDRiemannSolver), commit `6da1c024b8e5af6975dd66569e38b936424cb0e9` (2026-10-01), version 0.1.0. Tag this commit in the Julia repo (e.g. `v0.1.0-web-snapshot`). |
+| Source | [torrilhon/ExactMHDRiemannSolver](https://github.com/torrilhon/ExactMHDRiemannSolver), commit `0ca567ab6446e7da404a4016df8d0f484ae30595`, version 0.1.0 plus the checker fix found in Phase 1 (originally `6da1c02`). Tag: `v0.1.0-web-snapshot`. |
 | Numerics pin | The Julia repo has no `Manifest.toml` (it is git-ignored) and `[compat]` only fixes major versions (`NonlinearSolve = "4"`, `OrdinaryDiffEqVerner = "2"`, `Roots = "3"`, …). The tag alone therefore does **not** fix the numerics. The real pin is `reference/Manifest.toml`, committed in the web repo (§5.1). |
 | Target | Existing repository [torrilhon/ExactMHDRiemann-Web](https://github.com/torrilhon/ExactMHDRiemann-Web) (MIT license already in place), static site on GitHub Pages |
 | Policy | One-time snapshot; the two code bases may diverge later. The Julia code is the reference for correctness of this port only. |
@@ -17,20 +17,20 @@ Snapshot port of the Julia package to TypeScript. It runs entirely in the browse
 
 | Phase | State |
 | --- | --- |
-| 0. Setup | done: scaffold, CI, Pages, `reference/` pinned to `6da1c02` (`reference/BASELINE.md`) |
+| 0. Setup | done: scaffold, CI, Pages, `reference/` pinned (now to `0ca567a`, `reference/BASELINE.md`) |
 | 1. Golden data | done: 11 golden files, 8021 reference solves (`test/golden/README.md`) |
 | 2. Numerical toolbox | done: checked math with exact fma, Julia formatting, linalg, Brent (bit-identical to Roots.jl), Vern9 engine with dense output and step replay, Moré trust region, branch-aware FD Jacobian (83 unit tests) |
 | 3. Kernels | done: L0–L2 golden tests green (shocks 1e-15, fans 9e-16, dense output 7.5e-13, residual 1.7e-14, BIG points identical, FD Jacobian vs ForwardDiff 2.7e-8) |
 | 4. Report example end to end | done: driver, checker, output, Worker and first page (report example and Brio–Wu presets, wave table, plots, CSV); quasi-Euler ported as well (planned for Phase 7) |
-| 5. Regular solver complete | done: examples 115/117 identical (2 = the fixed Julia checker bug), random 2000/2000, stress 1000/1000; all wave tables ≤ 2.2e-12; C reference 1.33e-8 |
+| 5. Regular solver complete | done: examples 117/117 identical, random 2000/2000, stress 1000/1000; all wave tables ≤ 2.2e-12; C reference 1.33e-8 |
 | 6. Robustness | done except one criterion: small-Bt set 894/900 = 99.3 % identical (target ≥ 99.5 %; 6 degenerate continuation cases, success counts 835 vs 831); fuzz harness 2000/2000; browser smoke test in CI; speed: random 3.4 ms, stress 22 ms mean per solve (Julia 2 / 10 ms); page time limit 20 s |
 | 7. Quasi-Euler | done: 4004/4004 identical, kernels and dense fans ≤ 1e-12, Sod within 1e-5 of Toro |
 | 8. Web UI | done: presets, problem-file upload, advanced options, Worker with hard timeout, wave table, plots, three downloads, light/dark, phone width |
-| 9. Release | partly: README with measured accuracy, CITATION.cff; pending: merge to main (Pages deploy), tag v0.1.0 |
+| 9. Release | done except tags: README with measured accuracy, CITATION.cff, live on GitHub Pages; tags `v0.1.0-web-snapshot` (Julia) and `v0.1.0` (web) to be pushed by the owner |
 
 Findings so far (details in `reference/BASELINE.md`):
 
-- **Julia bug, fixed on a branch.** Two valid inputs just above the Bt thresholds return `CheckFailed`: the checker reports dense-output noise of a vanishingly weak fan as a mismatch. Fix `0ca567a` on branch `claude/elegant-edison-fb6a3w` of the Julia repo changes only these two results (verified on all 8021 solves). Pending: merge and re-pin the snapshot. The TS port includes the fixed checker; until the re-pin, the two cases are listed in `DIFFERENCES.md`.
+- **Julia bug, fixed.** Two valid inputs just above the Bt thresholds returned `CheckFailed`: the checker reported dense-output noise of a vanishingly weak fan as a mismatch. Fix `0ca567a` (now on the Julia `main`) changes only these two results (verified on all 8021 solves); the snapshot is re-pinned to it and the golden data regenerated.
 - **Time limit.** Five Julia homotopy solves need 6.8–8.3 s, above the default 5 s, so the golden data (time limit off) are not what Julia returns with default options for these cases. Confirms §4.2, item 4.
 - **Domain errors** in the residual appear only for |Ψ| ≳ 1e4; the `BIG` path is exercised by 130 golden points.
 - **Julia uses FMA.** `evalpoly` is Horner with `muladd`, a hardware fma on the reference machine; the port emulates fma exactly.
