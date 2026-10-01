@@ -53,7 +53,7 @@ expect((await page.textContent("#preset-note")) === "", "and clears the example 
 // 4. the domain panel shows the current bn_euler; a refused input names the measured values
 await page.click("details.domain summary");
 await page.fill("#bn_euler", "1e-8");
-expect((await page.textContent("#domain-bn-euler")) === "10⁻⁸", "panel follows bn_euler");
+expect((await page.$$eval(".domain-bn-euler", (xs) => xs.map((x) => x.textContent))).join() === "10⁻⁸,10⁻⁸,10⁻⁸", "panel follows bn_euler");
 await page.fill("#bn_euler", "1e-10");
 await page.fill("#L5", "0.00001"); await page.fill("#L6", "0");
 await page.fill("#R5", "0"); await page.fill("#R6", "0");

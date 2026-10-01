@@ -35,9 +35,9 @@
             <table>
               <thead><tr><th>case</th><th>normal field</th><th>transverse field</th><th>solver</th></tr></thead>
               <tbody>
-                <tr><th>vanishing normal field</th><td>|Bx|/√p ≤ <span id="domain-bn-euler">10⁻¹⁰</span> on both sides</td><td>any, including Bt = 0</td><td>quasi-Euler (Bx = 0)</td></tr>
-                <tr><th>regular</th><td>|Bx|/√p above it on at least one side</td><td>|Bt|/√p ≥ 10⁻⁴ on the larger side and ≥ 10⁻⁶ on the smaller side</td><td>regular</td></tr>
-                <tr><th>otherwise</th><td>|Bx|/√p above it on at least one side</td><td>either condition violated</td><td>refused (switch-on/off)</td></tr>
+                <tr><th>vanishing normal field</th><td>|Bx|/√p ≤ <span class="domain-bn-euler">10⁻¹⁰</span></td><td>any, including Bt = 0</td><td>quasi-Euler (Bx = 0)</td></tr>
+                <tr><th>regular</th><td>|Bx|/√p &gt; <span class="domain-bn-euler">10⁻¹⁰</span></td><td>|Bt|/√p ≥ 10⁻⁴ on the larger side and ≥ 10⁻⁶ on the smaller side</td><td>regular</td></tr>
+                <tr><th>otherwise</th><td>|Bx|/√p &gt; <span class="domain-bn-euler">10⁻¹⁰</span></td><td>either condition violated</td><td>refused (switch-on/off)</td></tr>
               </tbody>
             </table>
           </div>

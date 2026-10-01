@@ -41,9 +41,9 @@ pressure of the same state.
 
 | Case | Normal field | Transverse field | Solver |
 | --- | --- | --- | --- |
-| vanishing normal field | \|Bn\|/√p ≤ 1e-10 on both sides | any, including Bt = 0 on one or both sides | quasi-Euler (Bn = 0) |
-| regular | \|Bn\|/√p > 1e-10 on at least one side | \|Bt\|/√p ≥ 1e-4 on the larger side and ≥ 1e-6 on the smaller side | regular |
-| otherwise | \|Bn\|/√p > 1e-10 on at least one side | either condition violated, e.g. Bt = 0 on one side | `Unsupported` (`:switch_on_off`) |
+| vanishing normal field | \|Bn\|/√p ≤ 1e-10 | any, including Bt = 0 on one or both sides | quasi-Euler (Bn = 0) |
+| regular | \|Bn\|/√p > 1e-10 | \|Bt\|/√p ≥ 1e-4 on the larger side and ≥ 1e-6 on the smaller side | regular |
+| otherwise | \|Bn\|/√p > 1e-10 | either condition violated, e.g. Bt = 0 on one side | `Unsupported` (`:switch_on_off`) |
 
 The thresholds are the defaults of `bn_euler`, `bt_min_larger`, `bt_min_smaller` and
 `ratio_max` of the Julia package; on the page `bn_euler` can be changed under

@@ -68,7 +68,8 @@ export function startApp(): void {
   const showBnEuler = () => {
     const s = el<HTMLInputElement>("bn_euler").value.trim();
     const v = s === "" ? NaN : Number(s);
-    el("domain-bn-euler").textContent = Number.isFinite(v) && v >= 0 ? pow10(v) : "bn_euler";
+    const text = Number.isFinite(v) && v >= 0 ? pow10(v) : "bn_euler";
+    for (const x of document.querySelectorAll(".domain-bn-euler")) x.textContent = text;
   };
   el("bn_euler").addEventListener("input", showBnEuler);
   showBnEuler();
