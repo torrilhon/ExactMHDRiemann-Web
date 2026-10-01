@@ -27,4 +27,15 @@ export const PRESETS: Preset[] = [
       t: 0.1, x: [-0.5, 0.5], n: 2001,
     },
   },
+  {
+    id: "sod",
+    label: "Sod (Bn = 0, quasi-Euler)",
+    note: "Sod's shock tube, γ = 1.4, no magnetic field: the quasi-Euler path (Toro, test 1: p* = 0.30313, u* = 0.92745).",
+    problem: {
+      gamma: 1.4,
+      L: [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+      R: [0.125, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1],
+      t: 0.2, x: [-0.5, 0.5], n: 1001,
+    },
+  },
 ];
