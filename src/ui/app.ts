@@ -217,7 +217,7 @@ async function compute(): Promise<void> {
   const status = el("status");
   if (problem === null) {
     status.className = "status bad";
-    status.textContent = "Please correct the highlighted fields.";
+    status.textContent = "Please correct the highlighted fields. (Or try reloading the page.)";
     return;
   }
   busy = true;
