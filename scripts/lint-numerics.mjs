@@ -8,7 +8,9 @@ import { join, relative } from "node:path";
 const ROOT = new URL("../src/solver/", import.meta.url).pathname;
 // math.ts defines the wrappers; format.ts and exact.ts are formatting and exact
 // (BigInt) arithmetic, not floating-point numerics
-const EXEMPT = new Set(["math.ts", "format.ts", "exact.ts"]);
+// rk/engine.ts: step-size control only (norms, powers and logs of nonnegative error
+// estimates); the ODE right-hand sides it calls are checked as usual
+const EXEMPT = new Set(["math.ts", "format.ts", "exact.ts", "rk/engine.ts"]);
 const RULES = [
   [/\bMath\.(sqrt|log|log2|log10|log1p|pow)\b/, "use sqrtD / logD / powD from math.ts"],
   [/\*\*\s*(?![\d(])/, "use x*x or powD; `**` only with a literal integer exponent"],
