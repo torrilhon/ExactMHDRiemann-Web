@@ -26,6 +26,33 @@ downloaded as `solution.csv` (the format of Julia's `write_csv`), `solution.json
 `problem.toml`, which Julia's `problem_load` reads, so every result can be reproduced
 with the Julia package.
 
+## Supported initial states
+
+The input is checked before any solve. Field thresholds refer to |B|/√p with p the
+pressure of the same state.
+
+| Quantity | Condition | Otherwise |
+| --- | --- | --- |
+| all values, γ | finite, γ > 1 | `InvalidInput` |
+| density, pressure | ρ > 0 and p > 0 on both sides | `InvalidInput` |
+| normal field Bn | equal on both sides to within 1e-12·max(\|Bn\|, 1) | `InvalidInput` (`:bn_jump`) |
+| jump ratios | 1e-6 ≤ ρ_R/ρ_L ≤ 1e6 and 1e-6 ≤ p_R/p_L ≤ 1e6 | `Unsupported` (`:extreme_ratio`) |
+| velocities | no restriction | — |
+
+| Case | Normal field | Transverse field | Solver |
+| --- | --- | --- | --- |
+| vanishing normal field | \|Bn\|/√p ≤ 1e-10 on both sides | any, including Bt = 0 on one or both sides | quasi-Euler (Bn = 0) |
+| regular | \|Bn\|/√p > 1e-10 on at least one side | \|Bt\|/√p ≥ 1e-4 on the larger side and ≥ 1e-6 on the smaller side | regular |
+| otherwise | \|Bn\|/√p > 1e-10 on at least one side | either condition violated, e.g. Bt = 0 on one side | `Unsupported` (`:switch_on_off`) |
+
+The thresholds are the defaults of `bn_euler`, `bt_min_larger`, `bt_min_smaller` and
+`ratio_max` of the Julia package; on the page `bn_euler` can be changed under
+*Advanced options*. A refused problem is reported with the measured values that miss
+the thresholds. A problem that passes can still end as `RegularLimit` when its solution
+needs a limit of the regular waves: vacuum, a middle state with |Bt|/√p < 1e-8
+(`bt_floor`), or an intermediate or compound wave. With both transverse fields close to
+their thresholds a few percent of problems end as `NoConvergence`.
+
 ## Accuracy
 
 The port is tested against reference data generated once by the Julia package

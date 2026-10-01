@@ -16,6 +16,33 @@
           (γ-law gas), following M. Torrilhon, <em>Exact Solver and Uniqueness Conditions for
           Riemann Problems of Ideal Magnetohydrodynamics</em>, SAM Research Report 2002-06, ETH Zürich.
         </p>
+        <details class="domain card">
+          <summary>Supported initial states</summary>
+          <p class="muted">Checked before any solve. Field thresholds refer to |B|/√p with p the pressure of the same state.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>quantity</th><th>condition</th><th>otherwise</th></tr></thead>
+              <tbody>
+                <tr><th>all values, γ</th><td>finite, γ &gt; 1</td><td>invalid input</td></tr>
+                <tr><th>density, pressure</th><td>ρ &gt; 0 and p &gt; 0 on both sides</td><td>invalid input</td></tr>
+                <tr><th>normal field Bx</th><td>equal on both sides to within 10⁻¹²·max(|Bx|, 1)</td><td>invalid input</td></tr>
+                <tr><th>jump ratios</th><td>10⁻⁶ ≤ ρ<sub>R</sub>/ρ<sub>L</sub> ≤ 10⁶ and 10⁻⁶ ≤ p<sub>R</sub>/p<sub>L</sub> ≤ 10⁶</td><td>refused</td></tr>
+                <tr><th>velocities</th><td>no restriction</td><td>–</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>case</th><th>normal field</th><th>transverse field</th><th>solver</th></tr></thead>
+              <tbody>
+                <tr><th>vanishing normal field</th><td>|Bx|/√p ≤ <span id="domain-bn-euler">10⁻¹⁰</span> on both sides</td><td>any, including Bt = 0</td><td>quasi-Euler (Bx = 0)</td></tr>
+                <tr><th>regular</th><td>|Bx|/√p above it on at least one side</td><td>|Bt|/√p ≥ 10⁻⁴ on the larger side and ≥ 10⁻⁶ on the smaller side</td><td>regular</td></tr>
+                <tr><th>otherwise</th><td>|Bx|/√p above it on at least one side</td><td>either condition violated</td><td>refused (switch-on/off)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted">The quasi-Euler threshold is <code>bn_euler</code> in the advanced options. A problem that passes can still end as RegularLimit when its solution needs a limit of the regular waves: vacuum, a middle state with |Bt|/√p &lt; 10⁻⁸, or an intermediate or compound wave. With both transverse fields close to their thresholds a few percent of problems end as NoConvergence.</p>
+        </details>
       </header>
 
       <form id="problem" class="card" novalidate>

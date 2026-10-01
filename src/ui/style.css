@@ -152,3 +152,12 @@ label.guess { width: 18rem; max-width: 100%; }
 #file-msg.bad { color: var(--bad); }
 .status.idle { color: var(--muted); font-size: 0.9375rem; }
 .facts:empty { display: none; }
+details.domain { padding: 10px 16px; }
+details.domain summary { cursor: pointer; font-weight: 600; font-size: 0.9375rem; }
+details.domain[open] summary { margin-bottom: 8px; }
+details.domain p { margin: 8px 0; max-width: 46rem; }
+details.domain .table-wrap { margin: 8px 0 12px; }
+details.domain table { white-space: normal; }
+details.domain th, details.domain td { text-align: left; vertical-align: top; }
+details.domain td:last-child { white-space: nowrap; }
+details.domain code { font-size: 0.8125rem; }

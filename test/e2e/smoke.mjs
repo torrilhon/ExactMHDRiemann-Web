@@ -50,6 +50,17 @@ expect((await page.inputValue("#preset")) === "briowu", "advanced option keeps t
 await page.fill("#R7", "0.2");
 expect((await page.inputValue("#preset")) === "", "editing a field resets the selection");
 expect((await page.textContent("#preset-note")) === "", "and clears the example note");
+// 4. the domain panel shows the current bn_euler; a refused input names the measured values
+await page.click("details.domain summary");
+await page.fill("#bn_euler", "1e-8");
+expect((await page.textContent("#domain-bn-euler")) === "10⁻⁸", "panel follows bn_euler");
+await page.fill("#bn_euler", "1e-10");
+await page.fill("#L5", "0.00001"); await page.fill("#L6", "0");
+await page.fill("#R5", "0"); await page.fill("#R6", "0");
+await page.click("#compute");
+await page.waitForSelector(".status.warn", { timeout: 60_000 });
+const refusal = await page.textContent("#status");
+expect(refusal.includes("switch_on_off") && refusal.includes("larger side (left) |Bt|/√p = 1e-5 < 1e-4"), `refusal message: ${refusal}`);
 expect(errors.length === 0, `console errors: ${errors.join("; ")}`);
 console.log(process.exitCode ? "browser smoke test FAILED" : "browser smoke test passed");
 await browser.close();

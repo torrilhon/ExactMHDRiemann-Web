@@ -4,6 +4,7 @@ import type { ProblemInput, SolveResult } from "../solver/api.ts";
 import { solutionJson } from "../solver/api.ts";
 import { problemLoad, problemToml } from "../solver/problemfile.ts";
 import { PORT_VERSION, SNAPSHOT_COMMIT, SNAPSHOT_REPO, SNAPSHOT_TAG, SNAPSHOT_VERSION } from "../solver/snapshot.ts";
+import { refusalDetail } from "./domain.ts";
 import { renderPlots } from "./plots.ts";
 import { PRESETS } from "./presets.ts";
 
@@ -36,6 +37,15 @@ const REASONS: Record<string, string> = {
   check: "The independent checks failed. This would be a bug; please report the problem.",
 };
 
+const SUP: Record<string, string> = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+/** 1e-10 → "10⁻¹⁰", 2.5e-8 → "2.5·10⁻⁸" (the notation of the domain panel). */
+const pow10 = (v: number) => {
+  if (v === 0) return "0";
+  const [m, e] = v.toExponential().split("e") as [string, string];
+  const exp = [...String(Number(e))].map((c) => SUP[c] ?? c).join("");
+  return `${m === "1" ? "" : `${m}·`}10${exp}`;
+};
+
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const fmt = (v: number, d = 6) => (Number.isFinite(v) ? v.toFixed(d) : String(v));
 const sci = (v: number) => (Number.isFinite(v) ? v.toExponential(2) : String(v));
@@ -54,6 +64,14 @@ export function startApp(): void {
   el<HTMLInputElement>("bn_euler").value = "1e-10";
   el<HTMLInputElement>("time_limit").value = String(DEFAULT_TIME_LIMIT);
   el<HTMLInputElement>("homotopy").checked = true;
+  // the domain panel shows the quasi-Euler threshold currently set in the advanced options
+  const showBnEuler = () => {
+    const s = el<HTMLInputElement>("bn_euler").value.trim();
+    const v = s === "" ? NaN : Number(s);
+    el("domain-bn-euler").textContent = Number.isFinite(v) && v >= 0 ? pow10(v) : "bn_euler";
+  };
+  el("bn_euler").addEventListener("input", showBnEuler);
+  showBnEuler();
   const link = document.createElement("a");
   link.href = `${SNAPSHOT_REPO}/releases/tag/${SNAPSHOT_TAG}`;
   link.textContent = `ExactMHDRiemannSolver.jl ${SNAPSHOT_VERSION} (${SNAPSHOT_COMMIT.slice(0, 7)})`;
@@ -252,9 +270,11 @@ function showResult(problem: ProblemInput, r: SolveResult): void {
   const detail = [r.reason !== "none" ? r.reason : "", r.method !== "none" ? `method ${r.method}` : ""].filter(Boolean).join(" · ");
   status.replaceChildren(head, detail ? `  ${detail}` : "");
   const why = REASONS[r.reason] ?? "";
-  if (why) {
+  const measured = refusalDetail(r.reason, problem.L, problem.R, problem.opts?.bn_euler);
+  for (const text of [why, measured]) {
+    if (!text) continue;
     const p = document.createElement("p");
-    p.textContent = why;
+    p.textContent = text;
     status.append(p);
   }
 
