@@ -19,6 +19,8 @@ performance comparison only (it changes on every regeneration).
 | `basics` | L0 | `speeds`, `conserved`, `flux`, `primitive_jacobian` for 500 states; canonical frame of 300 L/R pairs (frame, canonical states, HStates, round trip, `speed_to_user`) |
 | `format` | L0 | Julia `repr` of ~550 Float64 values; `range(a, b; length = n)` for 14 grids |
 | `kernels` | L1 | 120 states (runtests `MersenneTwister(1)`): `fast_shock` at 5 strengths with the cubic's coefficients, bracket and root; `slow_limit`; `slow_shock_state` at 5 fractions with `slow_volume` and `slow_defect`; `rotation`. 60 fan cases (`MersenneTwister(2)`): `fast_fan(-0.7)`, `slow_fan(-0.4)` end states and the checker's `fan_eigen_integrate`. Switch-on, small-Bt slow limit, small-Bn (`bn_euler = 0`) shocks. Quasi-Euler `perp_side` at 11 pressure ratios on 60 states, and the strong-shock refusal |
+| `brent` | L1 | Roots.jl Brent on 455 polynomial cases: roots and evaluation counts |
+| `trustregion` | L2 | NonlinearSolve `TrustRegion` on 16 classic test problems: retcode, solution, steps |
 | `fans_dense` | L1 | 120 recorded fans (50 fast, 50 slow, 20 quasi-Euler `:fast0`): `fan_state` and `fan_speed` at 50 τ |
 | `residual` | L2 | 25 problems × 56 Ψ: solution, perturbations, random box, branch switches (ψf = 0, ψs = `SLOW_EPS`), `|Ψ| ~ 1e4` (130 points give the `BIG` vector); ForwardDiff Jacobians at 4 points per problem |
 | `solve_examples` | L3 | 117 problems: examples, C-code benchmarks, one case per refusal reason and the thresholds, trivial, symmetries, switch continuity, small Bn forced, vanishing waves, small Bt (sets 1, 6–8, 10–12); full records incl. canonical waves |

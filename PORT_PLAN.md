@@ -19,12 +19,15 @@ Snapshot port of the Julia package to TypeScript. It runs entirely in the browse
 | --- | --- |
 | 0. Setup | done: scaffold, CI, Pages, `reference/` pinned to `6da1c02` (`reference/BASELINE.md`) |
 | 1. Golden data | done: 11 golden files, 8021 reference solves (`test/golden/README.md`) |
+| 2. Numerical toolbox | done: checked math with exact fma, Julia formatting, linalg, Brent (bit-identical to Roots.jl), Vern9 engine with dense output and step replay, Moré trust region, branch-aware FD Jacobian (83 unit tests) |
 
 Findings so far (details in `reference/BASELINE.md`):
 
 - **Julia bug, fixed on a branch.** Two valid inputs just above the Bt thresholds return `CheckFailed`: the checker reports dense-output noise of a vanishingly weak fan as a mismatch. Fix `0ca567a` on branch `claude/elegant-edison-fb6a3w` of the Julia repo changes only these two results (verified on all 8021 solves). Pending: merge and re-pin the snapshot. The TS port includes the fixed checker; until the re-pin, the two cases are listed in `DIFFERENCES.md`.
 - **Time limit.** Five Julia homotopy solves need 6.8–8.3 s, above the default 5 s, so the golden data (time limit off) are not what Julia returns with default options for these cases. Confirms §4.2, item 4.
 - **Domain errors** in the residual appear only for |Ψ| ≳ 1e4; the `BIG` path is exercised by 130 golden points.
+- **Julia uses FMA.** `evalpoly` is Horner with `muladd`, a hardware fma on the reference machine; the port emulates fma exactly.
+- **The trust region is Moré's, not dogleg** (§4.2).
 - **Reconstructed scans** match the README, except a > c_A small-Bt settings at 1e-4 with 28/30 instead of ≥ 29/30.
 
 ---
@@ -185,23 +188,18 @@ ExactMHDRiemann-Web/
   - `homotopy_maxsteps = 400`
   - wall-clock `time_limit = 5 s`
 
-**NonlinearSolve's defaults** ([solver docs](https://docs.sciml.ai/NonlinearSolve/stable/native/solvers/)):
+**What `TrustRegion()` actually is at the pinned version** (read from the sources in Phase 2; the NonlinearSolve docs describe an older default):
 
-- `radius_update_scheme = Simple`
-- `step_threshold = 1e-4`
-- `shrink_threshold = 1/4`, `expand_threshold = 3/4`
-- `shrink_factor = 1/4`, `expand_factor = 2`
-- `max_shrink_times = 32`
-- initial and maximum radius derived from the problem when set to 0
+- descent `MoreTrustRegionDescent` (not dogleg): the subproblem `min ‖J p + F‖, ‖p‖ ≤ Δ` is solved nearly exactly by Moré's iteration on the damping λ (MINPACK `lmpar`), D = I, θ = 1e-4, at most 10 λ updates, λ warm-started; Gauss-Newton step when it is inside the region and J has full numerical rank (pivoted QR)
+- radius update `RadiusUpdateSchemes.More` (MINPACK `lmder`): accept at ρ > 1e-3; ρ < 1/4 → Δ = ¼ min(Δ, 10‖p‖); ρ ≥ 3/4 or λ = 0 → Δ = 2‖p‖; initial Δ = ‖u₀‖₂; predicted reduction ½‖Jp‖² + λ‖p‖²
+- Jacobian recomputed only after accepted steps; `max_shrink_times = 32`
+- termination `AbsNormSafeBestTerminationMode(‖·‖∞, max_stalled_steps = 32)`: the best iterate is returned; patience (100 steps) never applies with `maxiters = 60`
 
-The implementation is in `lib/NonlinearSolveFirstOrder/src/trust_region.jl` in [NonlinearSolve.jl](https://github.com/SciML/NonlinearSolve.jl). Read it, **at the version in `reference/Manifest.toml`**, for:
-
-- the exact initial-radius rule and the step type (dogleg)
-- **the default termination mode and which iterate is returned.** If the default is a "safe best" mode, `solve` returns the best iterate seen (smallest residual norm), not the last one, and may stop early when the residual stalls or grows. `nl_solve` relies on whatever `s.u` is, so the TS trust region must return the same kind of iterate.
+On 16 classic test problems (Moré–Garbow–Hillstrom) the TS port (`trustregion.ts`) returns the same retcodes as Julia and, in 13 cases, exactly the same number of steps (`test/unit/trustregion.test.ts`).
 
 **Plan**
 
-1. Implement a **dogleg trust-region** for dense n = 5 (~200 lines):
+1. ~~Implement a dogleg trust-region~~ Done as a port of the Moré trust region above (`trustregion.ts`). Original plan, for reference:
    - merit ½‖F‖²
    - Gauss–Newton step from LU with partial pivoting (`linalg.ts`)
    - Cauchy step, dogleg path
