@@ -119,3 +119,32 @@ twist angle α = ±π and with it the first start (±π/2) is decided by round-o
 outcomes are mirror images (z → -z in the canonical frame) of the same regular solution
 family. Axis-aligned coplanar problems (Brio–Wu: Bz = 0 exactly) are not affected. Golden
 comparisons of coplanar problems accept the mirrored solution.
+
+## Port vs reference, final comparison (Phases 5–6)
+
+`npm run compare-golden <set>`, all with `time_limit = Inf`:
+
+| set | identical retcode/reason/method | wave tables | TS time (mean / max) | Julia total |
+| --- | --- | --- | --- | --- |
+| examples and edge cases | 115/117 (the 2 fixed CheckFailed) | ≤ 4.1e-13 | 13 ms / 0.7 s | 0.8 s |
+| random | 2000/2000 | ≤ 1.8e-14 | 3.4 ms / 36 ms | 4.1 s |
+| stress | 1000/1000 | ≤ 2.2e-12 | 22 ms / 1.3 s | 9.7 s |
+| small-Bt scan | 894/900 (99.3 %) | ≤ 1.4e-12 | 231 ms / 28 s | 67.8 s |
+| quasi-Euler | 4004/4004 | ≤ 7.8e-13 | 1.5 ms / 21 ms | 3.8 s |
+
+What made the difference (Phase 6): for static arrays, NonlinearSolve's
+`MoreTrustRegionDescent` solves the **normal equations** with StaticArrays' LU, which
+throws `SingularException` on an exactly zero pivot; `nl_solve` then gives up on that
+start at once. In the small-Bt problems the Jacobian at the start vectors has an exactly
+zero column (the saturated slow-shock variable of the small-Bt side), so Julia moves on
+to the homotopy after microseconds. A port that regularizes the rank deficiency instead
+(MINPACK `lmpar`, the first version) iterates on and visits very expensive fans (34 653
+Vern9 steps each, in Julia too): up to 260 s per problem instead of 50 ms. The port now
+follows the normal-equation path, including the exception.
+
+The 6 remaining small-Bt differences (a > c_A, larger side Bt/√p ≤ 3e-4): 5 problems
+that Julia solves by continuation end as NoConvergence in the port, and 1 the other way.
+In these the homotopy starts at the degenerate point R = L, where the twist direction is
+singular; Julia's successful paths let the twist angle wind through ~30 turns. Finite
+differences and ForwardDiff cannot be expected to agree there. Success counts: Julia 835,
+port 831 of 900.

@@ -22,8 +22,8 @@ Snapshot port of the Julia package to TypeScript. It runs entirely in the browse
 | 2. Numerical toolbox | done: checked math with exact fma, Julia formatting, linalg, Brent (bit-identical to Roots.jl), Vern9 engine with dense output and step replay, Moré trust region, branch-aware FD Jacobian (83 unit tests) |
 | 3. Kernels | done: L0–L2 golden tests green (shocks 1e-15, fans 9e-16, dense output 7.5e-13, residual 1.7e-14, BIG points identical, FD Jacobian vs ForwardDiff 2.7e-8) |
 | 4. Report example end to end | done: driver, checker, output, Worker and first page (report example and Brio–Wu presets, wave table, plots, CSV); quasi-Euler ported as well (planned for Phase 7) |
-| 5. Regular solver complete | done: examples 115/117 identical (2 = the fixed Julia checker bug), random 2000/2000, stress 996/1000 (4 direct instead of homotopy, same solution); all wave tables ≤ 4.1e-12; C reference 1.33e-8 |
-| 6. Robustness | partly: fuzz harness (2000/2000 Success), browser smoke test in CI; small-Bt set and the shipped time limit pending (the page uses 20 s instead of Julia's 5 s) |
+| 5. Regular solver complete | done: examples 115/117 identical (2 = the fixed Julia checker bug), random 2000/2000, stress 1000/1000; all wave tables ≤ 2.2e-12; C reference 1.33e-8 |
+| 6. Robustness | done except one criterion: small-Bt set 894/900 = 99.3 % identical (target ≥ 99.5 %; 6 degenerate continuation cases, success counts 835 vs 831); fuzz harness 2000/2000; browser smoke test in CI; speed: random 3.4 ms, stress 22 ms mean per solve (Julia 2 / 10 ms); page time limit 20 s |
 | 7. Quasi-Euler | done: 4004/4004 identical, kernels and dense fans ≤ 1e-12, Sod within 1e-5 of Toro |
 | 8. Web UI | done: presets, problem-file upload, advanced options, Worker with hard timeout, wave table, plots, three downloads, light/dark, phone width |
 | 9. Release | partly: README with measured accuracy, CITATION.cff; pending: merge to main (Pages deploy), tag v0.1.0 |
@@ -34,10 +34,10 @@ Findings so far (details in `reference/BASELINE.md`):
 - **Time limit.** Five Julia homotopy solves need 6.8–8.3 s, above the default 5 s, so the golden data (time limit off) are not what Julia returns with default options for these cases. Confirms §4.2, item 4.
 - **Domain errors** in the residual appear only for |Ψ| ≳ 1e4; the `BIG` path is exercised by 130 golden points.
 - **Julia uses FMA.** `evalpoly` is Horner with `muladd`, a hardware fma on the reference machine; the port emulates fma exactly.
-- **The trust region is Moré's, not dogleg** (§4.2).
+- **The trust region is Moré's, not dogleg** (§4.2), and for static arrays NonlinearSolve uses its **normal-equation form**, whose LU throws on an exactly singular Jacobian; `nl_solve` then abandons the start. Reproducing that turned out to be essential for speed and agreement on the small-Bt set (reference/BASELINE.md).
 - **Vanishing waves and coplanar ties.** A wave with ψ ≈ ±1e-17 is a shock or a fan by the sign of round-off, and equal Bt/√p on both sides makes the frame's mirror decision a round-off tie; the golden comparison treats these as the same solution (`test/compare.ts`).
 - **The checker's eigenvector integration** can step outside the domain of the eigenvector field with a large first step; the port retries such steps (one quasi-Euler case), the fan ODEs keep Julia's failure semantics.
-- **Performance:** a direct solve takes ~5 ms in Node (Julia ~2 ms); homotopy cases are 5–10× slower than in Julia (stress set: mean 56 ms, max 7.2 s).
+- **Performance:** a solve takes 3.4 ms (random set) to 22 ms (stress set) on average in Node, about 2× Julia; residual fan integrations are memoized per solve.
 - **Reconstructed scans** match the README, except a > c_A small-Bt settings at 1e-4 with 28/30 instead of ≥ 29/30.
 
 ---

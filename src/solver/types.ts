@@ -2,7 +2,7 @@
 // Mirrors types.jl.
 
 import type { OdeSolution } from "./rk/engine.ts";
-import type { StepTape } from "./rk/tape.ts";
+import type { FanCache, StepTape } from "./rk/tape.ts";
 import { logD } from "./math.ts";
 
 /**
@@ -101,6 +101,8 @@ export interface Ctx {
   /** residual units: pressure, velocity, magnetic field */
   readonly scale: readonly [number, number, number];
   tape?: StepTape;
+  /** memo of residual fan integrations for one solve (TS only) */
+  fanCache?: FanCache;
 }
 
 export function makeCtx(gamma: number, Bn: number, opts: SolverOptions,

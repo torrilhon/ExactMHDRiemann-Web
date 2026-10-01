@@ -39,7 +39,10 @@ export function fromJson(h: HStateJson): HState {
 export class Worst {
   max = 0;
   bad: string[] = [];
-  constructor(readonly tol: number) {}
+  readonly tol: number;
+  constructor(tol: number) {
+    this.tol = tol;
+  }
   add(label: string, err: number): void {
     if (!(err <= this.max)) this.max = Number.isNaN(err) ? Infinity : err;
     if (!(err <= this.tol)) this.bad.push(`${label}: ${err.toExponential(3)}`);

@@ -53,25 +53,51 @@ export function slowFanRhs(rho0: number, p0: number, send: number, gamma: number
 }
 
 /** Julia `_fan_solve`: Vern9 on τ ∈ [0, 1]; an unsuccessful retcode becomes DomainError. */
-export function fanSolve(rhs: Rhs, y0: number[], ctx: Ctx, dense: boolean, par: number): OdeSolution {
+export function fanSolve(rhs: Rhs, y0: number[], ctx: Ctx, dense: boolean, par: number, slot = ""): OdeSolution {
   const opts = { abstol: ctx.opts.ode_tol, reltol: ctx.opts.ode_tol, dense, maxiters: 100_000 };
   // the residual (dense = false) integrates through the step tape of the Jacobian
   const sol = !dense && ctx.tape !== undefined
-    ? ctx.tape.integrate(VERN9, rhs, y0, 0.0, 1.0, opts)
+    ? ctx.tape.integrate(slot, VERN9, rhs, y0, 0.0, 1.0, opts)
     : integrate(VERN9, rhs, y0, 0.0, 1.0, opts);
   if (!sol.successful) throw new DomainError(par, `fan ODE failed: ${sol.retcode}`);
   return sol;
 }
 
+const fanKey = (fam: string, U: HState, par: number, sigma: number, ctx: Ctx) =>
+  `${fam}|${sigma}|${par}|${U.rho}|${U.u}|${U.p}|${U.bt}|${U.phi}|${U.vt[0]}|${U.vt[1]}|${ctx.gamma}|${ctx.Bn}|${ctx.opts.ode_tol}|${ctx.opts.s_vac}`;
+
+/**
+ * End state of a residual fan (no dense output), memoized per solve (ctx.fanCache).
+ * Exact: an adaptive integration is a deterministic function of its inputs. Only
+ * adaptive results are stored; in replay mode (perturbed points of a Jacobian) an entry
+ * is reused only if it is the base point's own integration of this slot, which is what
+ * the replay would reproduce bit for bit.
+ */
+function fanEnd(fam: string, rhs: Rhs, y0: number[], U: HState, par: number, sigma: number, ctx: Ctx): number[] {
+  const slot = `${fam}${sigma}`;
+  const cache = ctx.fanCache, tape = ctx.tape;
+  const mode = tape?.mode ?? "off";
+  const key = cache ? fanKey(fam, U, par, sigma, ctx) : "";
+  const hit = cache?.get(key);
+  if (hit !== undefined && (mode !== "replay" || hit.steps === tape!.recorded(slot))) {
+    tape?.put(slot, hit.steps);
+    return hit.end;
+  }
+  const sol = fanSolve(rhs, y0, ctx, false, par, slot);
+  if (mode !== "replay") cache?.set(key, { end: sol.end, steps: mode === "record" ? tape!.recorded(slot)! : sol.steps });
+  return sol.end;
+}
+
 /** Fast fan on U. Returns (downstream, FanData or null). */
 export function fastFan(U: HState, psi: number, sigma: number, ctx: Ctx, record = false): [HState, FanData | null] {
   const rhs = fastFanRhs(U.rho, U.p, U.bt, psi, ctx.gamma, ctx.Bn, sigma);
-  const sol = fanSolve(rhs, [0, U.u, 0], ctx, record, psi);
-  const [s, u, w] = sol.end as [number, number, number];
+  const sol = record ? fanSolve(rhs, [0, U.u, 0], ctx, true, psi) : null;
+  const end = sol ? sol.end : fanEnd("fast", rhs, [0, U.u, 0], U, psi, sigma, ctx);
+  const [s, u, w] = end as [number, number, number];
   const e0 = Math.cos(U.phi), e1 = Math.sin(U.phi);
   const D = hstate(U.rho * Math.exp(-s), u, U.p * Math.exp(-ctx.gamma * s), U.bt * Math.exp(psi), U.phi,
     [U.vt[0] + w * e0, U.vt[1] + w * e1]);
-  const fan: FanData | null = record ? { family: "fast", sigma, up: U, par: psi, sol } : null;
+  const fan: FanData | null = sol ? { family: "fast", sigma, up: U, par: psi, sol } : null;
   return [D, fan];
 }
 
@@ -83,12 +109,13 @@ export function slowFanSend(psi: number, ctx: Ctx): number {
 export function slowFan(U: HState, psi: number, sigma: number, ctx: Ctx, record = false): [HState, FanData | null] {
   const send = slowFanSend(psi, ctx);
   const rhs = slowFanRhs(U.rho, U.p, send, ctx.gamma, ctx.Bn, sigma);
-  const sol = fanSolve(rhs, [0, U.u, U.bt, 0], ctx, record, send);
-  const [s, u, bt, w] = sol.end as [number, number, number, number];
+  const sol = record ? fanSolve(rhs, [0, U.u, U.bt, 0], ctx, true, send) : null;
+  const end = sol ? sol.end : fanEnd("slow", rhs, [0, U.u, U.bt, 0], U, send, sigma, ctx);
+  const [s, u, bt, w] = end as [number, number, number, number];
   const e0 = Math.cos(U.phi), e1 = Math.sin(U.phi);
   const D = hstate(U.rho * Math.exp(-s), u, U.p * Math.exp(-ctx.gamma * s), bt, U.phi,
     [U.vt[0] + w * e0, U.vt[1] + w * e1]);
-  const fan: FanData | null = record ? { family: "slow", sigma, up: U, par: send, sol } : null;
+  const fan: FanData | null = sol ? { family: "slow", sigma, up: U, par: send, sol } : null;
   return [D, fan];
 }
 

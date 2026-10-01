@@ -2,12 +2,16 @@
 // `NonlinearSolve.TrustRegion()` does at the pinned version (NonlinearSolve 4.32.0,
 // NonlinearSolveFirstOrder 2.10.0, NonlinearSolveBase 2.54.1):
 //
-// - descent `MoreTrustRegionDescent` (scaling None, D = I): the subproblem
-//   min ‖J p + F‖, ‖p‖ ≤ Δ is solved nearly exactly by Moré's safeguarded iteration on
-//   the damping λ (MINPACK `lmpar`): Gauss-Newton step if it lies inside the region and
-//   J has full numerical rank (pivoted QR, tol n·eps·|R₁₁|), otherwise at most 10 λ
-//   updates until |‖p‖ - Δ| ≤ θΔ with θ = 1e-4; λ is warm-started from the previous
-//   solve; predicted reduction ½‖Jp‖² + λ‖p‖² (MINPACK form);
+// - descent `MoreTrustRegionDescent` (scaling None, D = I) in its normal-equation form,
+//   which NonlinearSolve uses for static arrays (the solver's SVector{5} problems): the
+//   subproblem min ‖J p + F‖, ‖p‖ ≤ Δ is solved nearly exactly by Moré's safeguarded
+//   iteration on the damping λ: Gauss-Newton step from JᵀJ p = -JᵀF if it lies inside
+//   the region, otherwise at most 10 λ updates of (JᵀJ + λI) p = -JᵀF until
+//   |‖p‖ - Δ| ≤ θΔ with θ = 1e-4; λ ≥ eps·max diag(JᵀJ), warm-started from the previous
+//   solve; predicted reduction ½‖Jp‖² + λ‖p‖² (MINPACK form). The linear systems are
+//   solved by LU with partial pivoting, which — as StaticArrays' `lu` — throws
+//   SingularException on an exactly zero pivot (e.g. a zero column of J); `nl_solve`
+//   treats that as a failed start;
 // - radius update `RadiusUpdateSchemes.More` (MINPACK `lmder`): accept if ρ > 1e-3;
 //   ρ < 1/4 → Δ = ¼ min(Δ, 10‖p‖); ρ ≥ 3/4 or λ = 0 → Δ = 2‖p‖; initial Δ = ‖u₀‖₂ if
 //   > 1e-4, else 1; a non-finite trial residual is rejected (ρ = -1);
@@ -17,12 +21,11 @@
 //   (accepted or not) or more than 32 consecutive shrinks; the best iterate (smallest
 //   ‖F‖∞) is returned.
 //
-// Bit-for-bit agreement with NonlinearSolve is not required (plan §4.2): the damped
-// systems are solved by a fresh Householder QR of [J; √λ I] instead of MINPACK's Givens
-// sweep, and the Jacobian comes from finite differences, not ForwardDiff.
+// Bit-for-bit agreement with NonlinearSolve is not required (plan §4.2); the Jacobian
+// comes from finite differences, not ForwardDiff.
 
 import type { Mat, Vec } from "./linalg.ts";
-import { dot, matvec, matTvec, norm2, normInf } from "./linalg.ts";
+import { dot, luFactor, luSolve, matvec, matTvec, norm2, normInf } from "./linalg.ts";
 import { sqrtD } from "./math.ts";
 
 export type NlRetcode = "Success" | "MaxIters" | "Unstable" | "Stalled" | "ShrinkThresholdExceeded"
@@ -48,91 +51,27 @@ export type Residual = (u: readonly number[]) => Vec;
 export type JacobianFn = (u: readonly number[], fu: readonly number[]) => Mat;
 
 const EPS = Number.EPSILON;
+
+/** Julia `LinearAlgebra.SingularException`: exactly zero pivot in an LU factorization. */
+export class SingularException extends Error {
+  readonly info: number;
+  constructor(info: number) {
+    super(`SingularException(${info})`);
+    this.name = "SingularException";
+    this.info = info;
+  }
+}
+
+/** Solve A x = b by LU with partial pivoting; throws SingularException on a zero pivot. */
+function luSolveChecked(A: Mat, b: readonly number[]): { x: Vec; f: ReturnType<typeof luFactor> } {
+  const f = luFactor(A);
+  for (let k = 0; k < A.length; k++) {
+    if (f.lu[k]![k] === 0) throw new SingularException(k + 1);
+  }
+  return { x: luSolve(f, b), f };
+}
 const THETA = 1e-4;
 const LAMBDA_ITERS = 10;
-
-// ---------------------------------------------------------------- Householder QR
-
-interface QR {
-  /** R, n×n upper triangular (row-major) */
-  R: Mat;
-  /** Qᵀ b for the right-hand side passed in */
-  qtb: Vec;
-  /** column permutation: column j of R corresponds to original column perm[j] */
-  perm: number[];
-  /** numerical rank */
-  rank: number;
-}
-
-/** QR of the m×n matrix A (m ≥ n), optionally with column pivoting, applied to b. */
-function householderQR(A: Mat, b: readonly number[], pivot: boolean): QR {
-  const m = A.length, n = A[0]!.length;
-  const a = A.map((r) => r.slice());
-  const qb = b.slice();
-  const perm = Array.from({ length: n }, (_, j) => j);
-  for (let k = 0; k < n; k++) {
-    if (pivot) {
-      let best = k, bnorm = -1;
-      for (let j = k; j < n; j++) {
-        let s = 0;
-        for (let i = k; i < m; i++) s += a[i]![j]! * a[i]![j]!;
-        if (s > bnorm) { bnorm = s; best = j; }
-      }
-      if (best !== k) {
-        for (let i = 0; i < m; i++) { const t = a[i]![k]!; a[i]![k] = a[i]![best]!; a[i]![best] = t; }
-        [perm[k], perm[best]] = [perm[best]!, perm[k]!];
-      }
-    }
-    let nrm = 0;
-    for (let i = k; i < m; i++) nrm = Math.hypot(nrm, a[i]![k]!);
-    if (nrm === 0) continue;
-    if (a[k]![k]! < 0) nrm = -nrm;
-    for (let i = k; i < m; i++) a[i]![k] = a[i]![k]! / nrm;
-    a[k]![k] = a[k]![k]! + 1;
-    for (let j = k + 1; j < n; j++) {
-      let s = 0;
-      for (let i = k; i < m; i++) s += a[i]![k]! * a[i]![j]!;
-      s = -s / a[k]![k]!;
-      for (let i = k; i < m; i++) a[i]![j] = a[i]![j]! + s * a[i]![k]!;
-    }
-    let s = 0;
-    for (let i = k; i < m; i++) s += a[i]![k]! * qb[i]!;
-    s = -s / a[k]![k]!;
-    for (let i = k; i < m; i++) qb[i] = qb[i]! + s * a[i]![k]!;
-    a[k]![k] = -nrm;                                   // diagonal of R
-  }
-  const R: Mat = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (j >= i ? a[i]![j]! : 0)));
-  let rank = n;
-  const tol = n * EPS * Math.abs(R[0]![0]!);
-  for (let j = 0; j < n; j++) {
-    if (Math.abs(R[j]![j]!) <= tol) { rank = j; break; }
-  }
-  return { R, qtb: qb.slice(0, n), perm, rank };
-}
-
-/** Solve R x = y (upper triangular). */
-function backSub(R: Mat, y: readonly number[]): Vec {
-  const n = R.length;
-  const x = y.slice(0, n);
-  for (let i = n - 1; i >= 0; i--) {
-    let s = x[i]!;
-    for (let j = i + 1; j < n; j++) s -= R[i]![j]! * x[j]!;
-    x[i] = s / R[i]![i]!;
-  }
-  return x;
-}
-
-/** Solve Rᵀ x = y. */
-function forwardSubT(R: Mat, y: readonly number[]): Vec {
-  const n = R.length;
-  const x = y.slice(0, n);
-  for (let i = 0; i < n; i++) {
-    let s = x[i]!;
-    for (let j = 0; j < i; j++) s -= R[j]![i]! * x[j]!;
-    x[i] = s / R[i]![i]!;
-  }
-  return x;
-}
 
 const finite = (v: readonly number[]) => v.every(Number.isFinite);
 
@@ -146,6 +85,7 @@ interface DescentState {
   gn: Vec | null;
   gnNorm: number;
   gnValid: boolean;
+  JtJ?: Mat;
 }
 
 interface DescentResult {
@@ -161,45 +101,35 @@ function extras(J: Mat, p: Vec, lambda: number): Omit<DescentResult, "ok"> {
   return { p, lambda, predicted: dot(Jp, Jp) / 2 + lambda * dot(p, p), stepNorm: norm2(p) };
 }
 
-/** Solution of min ‖[J; √λ I] p - [-F; 0]‖ and the R factor of [J; √λ I]. */
-function dampedSolve(J: Mat, fu: readonly number[], lambda: number): { p: Vec; R: Mat } | null {
-  const n = J[0]!.length;
-  const sl = sqrtD(lambda);
-  const A: Mat = [...J.map((r) => r.slice()), ...Array.from({ length: n }, (_, i) =>
-    Array.from({ length: n }, (_, j) => (i === j ? sl : 0)))];
-  const b = [...fu.map((v) => -v), ...new Array<number>(n).fill(0)];
-  const qr = householderQR(A, b, false);
-  const p = backSub(qr.R, qr.qtb);
-  return finite(p) ? { p, R: qr.R } : null;
-}
-
 function descent(st: DescentState, J: Mat, fu: readonly number[], delta: number, newJacobian: boolean): DescentResult {
   const n = J[0]!.length;
-  if (newJacobian) { st.gnValid = false; st.boundValid = false; }
+  if (newJacobian) {
+    st.gnValid = false; st.boundValid = false;
+    st.JtJ = Array.from({ length: n }, (_, a) => Array.from({ length: n }, (_, b) => {
+      let x = 0;
+      for (let k = 0; k < J.length; k++) x += J[k]![a]! * J[k]![b]!;
+      return x;
+    }));
+  }
+  const JtJ = st.JtJ!;
   const Jtf = matTvec(J, fu);
   if (norm2(Jtf) === 0) {
     // stationary point of the model: p = 0 for every Δ
     return { ok: true, ...extras(J, new Array<number>(n).fill(0), 0) };
   }
   if (!st.gnValid) {
-    const qr = householderQR(J, fu.map((v) => -v), true);
-    if (qr.rank === n) {
-      const z = backSub(qr.R, qr.qtb);
-      const p = new Array<number>(n);
-      for (let j = 0; j < n; j++) p[qr.perm[j]!] = z[j]!;
-      st.gn = finite(p) ? p : null;
-    } else {
-      st.gn = null;
-    }
+    // Gauss-Newton: JᵀJ p = -JᵀF (throws SingularException on a zero pivot, as Julia)
+    const { x } = luSolveChecked(JtJ, Jtf);
+    const p = x.map((v) => -v);
+    st.gn = finite(p) ? p : null;
     st.gnNorm = st.gn === null ? Infinity : norm2(st.gn);
     st.gnValid = true;
   }
   if (st.gn !== null && st.gnNorm <= delta) return { ok: true, ...extras(J, st.gn, 0) };
 
-  // Moré's safeguarded Newton iteration on λ
+  // Moré's safeguarded Newton iteration on λ (normal form, `_more_generic_λloop!`)
   const ubound = norm2(Jtf) / delta;
   let lambda = st.lambda === 0 ? 1e-3 * ubound : Math.min(st.lambda, ubound);
-  lambda = Math.max(lambda, EPS);
   let l = 0, u = ubound;
   if (st.boundValid) {
     if (st.boundNorm >= delta) {
@@ -210,18 +140,21 @@ function descent(st: DescentState, J: Mat, fu: readonly number[], delta: number,
       lambda = Math.min(lambda, u);
     }
   }
+  // below ~eps·maxdiag(JᵀJ) the normal-equations factorization cannot succeed
+  lambda = Math.max(lambda, EPS * Math.max(...JtJ.map((r, k) => r[k]!)));
   u = Math.max(u, lambda);
   st.lambda = lambda;
   let got: Vec | null = null;
   let posBound = l > 0;
   let phiPrev = 0, lambdaPrev = lambda;
   for (let i = 1; i <= LAMBDA_ITERS; i++) {
-    const sol = dampedSolve(J, fu, lambda);
-    if (sol === null) {
+    const A = JtJ.map((r, a) => r.map((v, b) => (a === b ? v + lambda : v)));
+    const { x, f } = luSolveChecked(A, Jtf);
+    if (!finite(x)) {
       l = Math.max(l, lambda); lambda *= 10; u = Math.max(u, lambda);
       continue;
     }
-    const p = sol.p;
+    const p = x.map((v) => -v);
     got = p;
     st.lambda = lambda;
     const pnorm = norm2(p);
@@ -232,8 +165,8 @@ function descent(st: DescentState, J: Mat, fu: readonly number[], delta: number,
     if (!posBound && phiPrev < 0 && phi <= phiPrev + THETA * delta && lambda <= lambdaPrev) break;
     if (phi > 0) posBound = true;
     phiPrev = phi; lambdaPrev = lambda;
-    // q = (JᵀJ + λI)⁻¹ p = S⁻¹ S⁻ᵀ p with [J; √λI] = Q S
-    const q = backSub(sol.R, forwardSubT(sol.R, p));
+    // q = (JᵀJ + λI)⁻¹ p
+    const q = luSolve(f, p);
     if (!finite(q)) {
       l = Math.max(l, lambda); lambda *= 10; u = Math.max(u, lambda);
       continue;

@@ -10,6 +10,7 @@ import { problemScale, residualJacobian, resnorm, safeResidual } from "./residua
 import { assemble, SLOW_EPS } from "./side.ts";
 import { slowLimit } from "./shocks.ts";
 import { trustRegion } from "./trustregion.ts";
+import { FanCache } from "./rk/tape.ts";
 import type { CheckReport, Ctx, Frame, HState, RetCode, RiemannProblem, RiemannSolution, SolverOptions, Wave } from "./types.ts";
 import { defaultOptions, hstate, makeCtx } from "./types.ts";
 
@@ -144,7 +145,7 @@ export function solve(prob: RiemannProblem, args: SolveArgs = {}): RiemannSoluti
   const F = makeFrame(prob.L, prob.R);
   const [Lc, Rc] = canonicalStates(prob.L, prob.R, F);
   const UL = toHState(Lc), UR = toHState(Rc);
-  const ctx = makeCtx(prob.gamma, Lc[4]!, opts, problemScale(UL, UR, Lc[4]!, prob.gamma));
+  const ctx: Ctx = { ...makeCtx(prob.gamma, Lc[4]!, opts, problemScale(UL, UR, Lc[4]!, prob.gamma)), fanCache: new FanCache() };
   if (Math.max(...Lc.map((v, i) => Math.abs(v - Rc[i]!))) <= 1e-14) {
     const w: Wave[] = [{ kind: "contact", side: 0, s_left: UL.u, s_right: UL.u, left: UL, right: UR, fan: null }];
     return { retcode: "Success", reason: "trivial", prob, psi: ZERO5.slice(), residual: 0.0, waves: w, frame: F, ctx,

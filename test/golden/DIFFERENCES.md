@@ -8,7 +8,8 @@ explanation (plan §5.3).
 | --- | --- | --- | --- | --- |
 | `solve_examples` | `refusal/bt_larger_at_threshold` | CheckFailed | Success (expected) | Julia checker false positive on a vanishingly weak fan; the port includes the fix of Julia commit `0ca567a` (`reference/BASELINE.md`). Disappears when the snapshot is re-pinned to the fix. |
 | `solve_examples` | `refusal/bt_ok_2` | CheckFailed | Success (expected) | as above |
-| `solve_stress` | #79, #277, #726, #979 | Success, method `homotopy` | Success, method `direct` | The TS trust region converges from a start vector where Julia's did not; same solution (wave tables ≤ 4.1e-12). |
+| `solve_small_bt` | #372, #402, #419, #432, #449 | Success (homotopy) | NoConvergence | a > c_A, larger side Bt/√p ≤ 3e-4: the continuation starts at the degenerate point R = L (singular twist direction); Julia's path winds the twist angle through ~30 turns. FD vs ForwardDiff Jacobians cannot be expected to agree there (reference/BASELINE.md). |
+| `solve_small_bt` | #362 | NoConvergence | Success (homotopy) | as above, the other way round |
 
 ## Equivalences used in the comparison (`test/compare.ts`)
 
