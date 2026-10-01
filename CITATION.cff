@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the report below."
+title: "ExactMHDRiemann-Web: exact solver for Riemann problems of ideal MHD in the browser"
+authors:
+  - family-names: Torrilhon
+    given-names: Manuel
+    email: mt@acom.rwth-aachen.de
+    affiliation: "ACoM, RWTH Aachen University"
+license: MIT
+repository-code: "https://github.com/torrilhon/ExactMHDRiemann-Web"
+url: "https://torrilhon.github.io/ExactMHDRiemann-Web/"
+references:
+  - type: software
+    title: "ExactMHDRiemannSolver.jl: exact solver for Riemann problems of ideal MHD"
+    authors:
+      - family-names: Torrilhon
+        given-names: Manuel
+    version: 0.1.0
+    commit: 6da1c024b8e5af6975dd66569e38b936424cb0e9
+    repository-code: "https://github.com/torrilhon/ExactMHDRiemannSolver"
+preferred-citation:
+  type: report
+  title: "Exact Solver and Uniqueness Conditions for Riemann Problems of Ideal Magnetohydrodynamics"
+  authors:
+    - family-names: Torrilhon
+      given-names: Manuel
+  institution:
+    name: "Seminar für Angewandte Mathematik, ETH Zürich"
+  number: "2002-06"
+  year: 2002
+  month: 4
