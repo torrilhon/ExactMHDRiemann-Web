@@ -7,8 +7,15 @@ This is a TypeScript port of the Julia package
 [ExactMHDRiemannSolver.jl](https://github.com/torrilhon/ExactMHDRiemannSolver), taken as
 a snapshot of commit `0ca567a` (version 0.1.0 with a fix of its checker), following
 
-> M. Torrilhon, *Exact Solver and Uniqueness Conditions for Riemann Problems of Ideal
-> Magnetohydrodynamics*, SAM Research Report 2002-06, ETH Zürich.
+> M. Torrilhon, [*Exact Solver and Uniqueness Conditions for Riemann Problems of Ideal
+> Magnetohydrodynamics*](https://www.sam.math.ethz.ch/sam_reports/reports_final/reports2002/2002-06.pdf),
+> SAM Research Report 2002-06, ETH Zürich, 2002.
+
+Also see:
+
+> M. Torrilhon, *Uniqueness conditions for Riemann problems of ideal
+> magnetohydrodynamics*, Journal of Plasma Physics **69**(3), 253–276 (2003),
+> doi:[10.1017/S0022377803002186](https://doi.org/10.1017/S0022377803002186).
 
 The page solves regular problems (fast and slow shocks and fans, rotational
 discontinuities, contact) and, for a vanishing normal field, the quasi-Euler problem
@@ -52,5 +59,5 @@ needed for building or testing.
 
 ## Citation and license
 
-Please cite the report above ([`CITATION.cff`](CITATION.cff)). MIT license, see
+Please cite the report and the article above ([`CITATION.cff`](CITATION.cff)). MIT license, see
 [LICENSE](LICENSE).

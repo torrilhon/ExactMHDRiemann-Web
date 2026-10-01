@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite the report below."
+message: "If you use this software, please cite the report below and the article in its references."
 title: "ExactMHDRiemann-Web: exact solver for Riemann problems of ideal MHD in the browser"
 authors:
   - family-names: Torrilhon
@@ -19,6 +19,20 @@ references:
     version: 0.1.0
     commit: 0ca567ab6446e7da404a4016df8d0f484ae30595
     repository-code: "https://github.com/torrilhon/ExactMHDRiemannSolver"
+  - type: article
+    title: "Uniqueness conditions for Riemann problems of ideal magnetohydrodynamics"
+    authors:
+      - family-names: Torrilhon
+        given-names: Manuel
+    journal: "Journal of Plasma Physics"
+    volume: 69
+    issue: 3
+    start: 253
+    end: 276
+    year: 2003
+    month: 4
+    doi: "10.1017/S0022377803002186"
+    url: "https://doi.org/10.1017/S0022377803002186"
 preferred-citation:
   type: report
   title: "Exact Solver and Uniqueness Conditions for Riemann Problems of Ideal Magnetohydrodynamics"
@@ -30,3 +44,4 @@ preferred-citation:
   number: "2002-06"
   year: 2002
   month: 4
+  url: "https://www.sam.math.ethz.ch/sam_reports/reports_final/reports2002/2002-06.pdf"
