@@ -46,7 +46,9 @@ export function renderPlots(host: HTMLElement, x: number[], W: number[][], names
         { stroke: ink, grid: { stroke: grid, width: 1 }, ticks: { stroke: grid, width: 1 }, size: 32 },
         { stroke: ink, grid: { stroke: grid, width: 1 }, ticks: { stroke: grid, width: 1 }, size: 56 },
       ],
-      series: [{}, { label: name, stroke: line, width: 2, points: { show: false } }],
+      // pxAlign 0: no snapping to device pixels, which on fractional pixel ratios can split
+      // values equal up to round-off (1e-16) into neighbouring rows, a step that is not there
+      series: [{}, { label: name, stroke: line, width: 2, points: { show: false }, pxAlign: 0 }],
       hooks: {
         setCursor: [(u) => {
           const i = u.cursor.idx;
