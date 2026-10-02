@@ -161,3 +161,13 @@ details.domain table { white-space: normal; }
 details.domain th, details.domain td { text-align: left; vertical-align: top; }
 details.domain td:last-child { white-space: nowrap; }
 details.domain code { font-size: 0.8125rem; }
+#waves tr.wave th { background: var(--bg); padding-top: 3px; padding-bottom: 3px; font-size: 0.75rem; text-align: left; }
+#waves .wave-label { position: sticky; left: 10px; display: inline-flex; gap: 12px; }
+#waves .wave-label .speed { color: var(--muted); font-weight: 400; }
+#waves td.same { color: var(--muted); opacity: 0.55; }
+#waves-note { margin: 8px 0 0; }
+@media (max-width: 720px) {
+  #waves thead th:first-child, #waves tr:not(.wave) th:first-child {
+    position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--rule);
+  }
+}

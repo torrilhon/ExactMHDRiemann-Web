@@ -84,12 +84,13 @@
         <ul id="messages" class="messages"></ul>
         <div id="waves" class="table-wrap" hidden>
           <table>
-            <caption>Waves, left to right: speeds and the state to the right of each wave</caption>
+            <caption>States from left to right, with the waves between them</caption>
             <thead>
-              <tr><th>wave</th><th>s left</th><th>s right</th><th>ρ</th><th>vx</th><th>vy</th><th>vz</th><th>Bx</th><th>By</th><th>Bz</th><th>p</th></tr>
+              <tr><th></th><th>ρ</th><th>vx</th><th>vy</th><th>vz</th><th>By</th><th>Bz</th><th>∠Bt</th><th>p</th></tr>
             </thead>
             <tbody id="waves-body"></tbody>
           </table>
+          <p id="waves-note" class="muted"></p>
         </div>
         <p id="downloads" class="downloads" hidden>
           <button id="dl-csv" type="button" class="secondary">solution.csv</button>

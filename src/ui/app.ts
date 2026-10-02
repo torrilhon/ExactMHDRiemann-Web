@@ -6,6 +6,7 @@ import { problemLoad, problemToml } from "../solver/problemfile.ts";
 import { PORT_VERSION, SNAPSHOT_COMMIT, SNAPSHOT_REPO, SNAPSHOT_TAG, SNAPSHOT_VERSION } from "../solver/snapshot.ts";
 import { refusalDetail } from "./domain.ts";
 import { renderPlots } from "./plots.ts";
+import { STATE_COLUMNS, waveTable } from "./wavetable.ts";
 import { PRESETS } from "./presets.ts";
 
 const VARS = ["ρ", "vx", "vy", "vz", "Bx", "By", "Bz", "p"] as const;
@@ -47,7 +48,6 @@ const pow10 = (v: number) => {
 };
 
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
-const fmt = (v: number, d = 6) => (Number.isFinite(v) ? v.toFixed(d) : String(v));
 const sci = (v: number) => (Number.isFinite(v) ? v.toExponential(2) : String(v));
 
 export function startApp(): void {
@@ -296,16 +296,30 @@ function showResult(problem: ProblemInput, r: SolveResult): void {
 
   // wave table
   const tbody = el("waves-body");
-  const rows = [
-    ["left state", "", "", ...problem.L.map((v) => fmt(v))],
-    ...r.table.map((w) => [w.kind.replace("_", " "), fmt(w.s_left), fmt(w.s_right),
-      fmt(w.rho), fmt(w.vx), fmt(w.vy), fmt(w.vz), fmt(w.Bx), fmt(w.By), fmt(w.Bz), fmt(w.p)]),
-  ];
-  tbody.replaceChildren(...rows.map((cells) => {
+  tbody.replaceChildren(...waveTable(problem.L, r.table).map((line) => {
     const tr = document.createElement("tr");
-    cells.forEach((c, j) => { const td = document.createElement(j === 0 ? "th" : "td"); td.textContent = c; tr.append(td); });
+    const th = document.createElement("th");
+    if (line.kind === "wave") {
+      tr.className = "wave";
+      th.colSpan = STATE_COLUMNS.length + 1;
+      const name = document.createElement("strong"); name.textContent = `↓ ${line.label}`;
+      const sp = document.createElement("span"); sp.className = "speed"; sp.textContent = line.speed;
+      const box = document.createElement("span"); box.className = "wave-label"; box.append(name, sp);
+      th.append(box);
+      tr.append(th);
+    } else {
+      th.textContent = line.label;
+      tr.append(th, ...line.cells.map((c, i) => {
+        const td = document.createElement("td");
+        td.textContent = c;
+        if (line.same[i]) td.className = "same";
+        return td;
+      }));
+    }
     return tr;
   }));
+  el("waves-note").textContent = `Bx = ${problem.L[4]} in every state. ∠Bt = atan2(Bz, By). ` +
+    "Faded: unchanged across the wave above.";
   el("waves").hidden = r.table.length === 0;
 
   lastCsv = r.csv;

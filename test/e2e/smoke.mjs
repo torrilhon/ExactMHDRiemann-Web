@@ -27,11 +27,16 @@ await page.selectOption("#preset", "paper");
 expect((await page.inputValue("#L0")) === "3", "example fills the fields");
 await page.click("#compute");
 await page.waitForSelector(".status.good", { timeout: 60_000 });
-const cells = await page.$$eval("#waves-body tr", (rows) => rows.map((r) => [...r.children].map((c) => c.textContent)));
-const kinds = cells.slice(1).map((r) => r[0]);
+const waves = await page.$$eval("#waves-body tr.wave", (rows) => rows.map((r) => [r.querySelector("strong").textContent, r.querySelector(".speed").textContent]));
+const kinds = waves.map((w) => w[0].replace("↓ ", ""));
 expect(JSON.stringify(kinds) === JSON.stringify(["fast fan", "rotation", "slow fan", "contact", "slow shock", "rotation", "fast shock"]), `wave kinds ${kinds}`);
 const ref = [-1.474921, -0.631585, -0.521394, 0.402052, 1.279597, 1.568066, 2.072332];
-cells.slice(1).forEach((r, i) => expect(Math.abs(Number(r[1]) - ref[i]) <= 2e-6, `s_left of wave ${i + 1}: ${r[1]}`));
+waves.forEach((w, i) => expect(Math.abs(Number(w[1].split(" ")[2]) - ref[i]) <= 2e-6, `s_left of wave ${i + 1}: ${w[1]}`));
+const states = await page.$$eval("#waves-body tr:not(.wave)", (rows) => rows.map((r) => [...r.children].map((c) => c.textContent)));
+expect(states.length === 8 && states[0][0] === "left state" && states[7][0] === "right state", "8 states, left to right");
+expect(states[7].slice(1).join() === "1.000000,0.000000,0.000000,0.000000,0.070737,0.997495,85.94°,1.000000", `right state ${states[7]}`);
+const faded = await page.$$eval("#waves-body tr:not(.wave)", (rows) => rows.map((r) => [...r.querySelectorAll("td")].map((c) => c.classList.contains("same") ? 1 : 0).join("")));
+expect(faded[4] === "01111111", `contact changes only ρ: ${faded[4]}`);
 expect((await page.locator(".plot").count()) === 8, "8 plots");
 
 // 2. every preset solves
